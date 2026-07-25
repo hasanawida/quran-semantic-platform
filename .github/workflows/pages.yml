@@ -41,6 +41,12 @@ jobs:
         working-directory: apps/api
         run: pytest tests/test_no_scripture_in_source.py -q
 
+      # حارس الروابط: رابط إلى مسار محذوف لا يكشفه مترجم ولا بناء —
+      # `<Link href>` نصٌّ حرّ — ولا يظهر إلا حين يضغط مستعمل فيصل 404.
+      - name: Internal links resolve
+        working-directory: apps/api
+        run: pytest tests/test_static_links.py -q
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

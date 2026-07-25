@@ -64,7 +64,7 @@ function renderAyah(ayah: AyahRow, surah: number) {
     parts.push(
       <Link
         key={`w-${word.word_number}`}
-        href={`/ayah/${surah}/${ayah.ayah_number}#w${word.word_number}`}
+        href={`/ayah?s=${surah}&a=${ayah.ayah_number}#w${word.word_number}`}
         className="word-chip"
         title={`تحليل الكلمة ${word.word_number}`}
       >
@@ -154,7 +154,7 @@ export default function SurahView({ surah }: { surah: number }) {
                 <p className="quran-text" lang="ar">
                   {renderAyah(ayah, surah)}
                   <Link
-                    href={`/ayah/${surah}/${ayah.ayah_number}`}
+                    href={`/ayah?s=${surah}&a=${ayah.ayah_number}`}
                     className="ayah-marker"
                     aria-label={`الآية ${ayah.ayah_number} — التحليل الصرفي`}
                   >

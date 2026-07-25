@@ -241,7 +241,7 @@ export default function MushafIndexPage() {
                 سورة {jump.surah.arabic_name} — الآية {jump.ayah}
               </Link>
               {" · "}
-              <Link href={`/ayah/${jump.surah.number}/${jump.ayah}`}>
+              <Link href={`/ayah?s=${jump.surah.number}&a=${jump.ayah}`}>
                 التحليل الصرفي
               </Link>
             </p>
@@ -321,7 +321,7 @@ export default function MushafIndexPage() {
                   </p>
                   <MarkedAyah hit={hit} />
                   <p className="ayah-actions">
-                    <Link href={`/ayah/${hit.surah_number}/${hit.ayah_number}`}>
+                    <Link href={`/ayah?s=${hit.surah_number}&a=${hit.ayah_number}`}>
                       التحليل الصرفي ←
                     </Link>
                     {" · "}
