@@ -27,19 +27,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      # [dev] لأجل pytest: الحُرّاس أدناه تُشغَّل به لا بالتطبيق وحده
       - name: Install API package (for app.utils.arabic)
-        run: pip install -e apps/api
+        run: pip install -e "apps/api[dev]"
 
       # البيانات أولًا: البناء يقرأ surahs.json بـfs في generateStaticParams
       - name: Generate static data
         env:
           QSP_DATA_DIR: ${{ github.workspace }}/apps/api/data
         run: python scripts/export-static/build_data.py
-
-      # حارس التطبيع: ثلاثة تنفيذات (بايثون، SQL، المتصفح) لا تفترق
-      - name: Normalizer parity (browser vs python)
-        working-directory: apps/api
-        run: pytest tests/test_browser_normalizer_matches_python.py -q
 
       - name: No scripture in source
         working-directory: apps/api
@@ -53,6 +49,13 @@ jobs:
       - name: Install
         working-directory: apps/web
         run: npm ci
+
+      # بعد npm ci لا قبله: الحارس يترجم normalize.ts بـtsc، وtsc يأتي
+      # من node_modules الواجهة. وموضعه هنا **قبل البناء** مقصود: انحراف
+      # التطبيع يوقف النشرة ولا يصل إلى الناس بحثًا يعيد صفرًا صامتًا.
+      - name: Normalizer parity (browser vs python)
+        working-directory: apps/api
+        run: pytest tests/test_browser_normalizer_matches_python.py -q
 
       - name: Build static export
         working-directory: apps/web
