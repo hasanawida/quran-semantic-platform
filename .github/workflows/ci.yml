@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        working-directory: apps/api
+        run: pip install ".[dev]"
+      - name: Lint
+        working-directory: apps/api
+        run: ruff check .
+      - name: Lint import scripts
+        run: ruff check scripts
+      # الهجرات تُختبر ذهابًا وإيابًا: مخطط لا يمكن التراجع عنه خطر تشغيلي
+      - name: Migrations round-trip
+        working-directory: apps/api
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///./ci-migrations.db
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+      - name: Test
+        working-directory: apps/api
+        run: pytest
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install
+        working-directory: apps/web
+        run: npm ci
+      - name: Build
+        working-directory: apps/web
+        run: npm run build

@@ -1,0 +1,25 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+.next/
+coverage/
+dist/
+*.pyc
+.DS_Store
+postgres_data/
+
+# ملفات المصادر الخام تنزّل ببناء الحزمة (كبيرة، خارجية) — تبقى محليًا
+data/raw/
+# الحزمة المبنية (quran_bundle.json.gz) تُحفظ لأنها تحمل بصمات مصادرها
+
+# قاعدة بيانات التطوير المحلية (SQLite) تُبنى وتُبذر عند الإقلاع
+*.db
+*.db-journal
+*.db-wal
+
+# أثر بناء حزمة بايثون — يُولَّد عند التثبيت
+*.egg-info/

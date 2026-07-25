@@ -1,0 +1,26 @@
+# وسيط عكسي بأصل واحد: الواجهة والـ API تحت نطاق واحد.
+# فائدتان: لا حاجة إلى CORS، وعامل الخدمة يستطيع تخزين طلبات الـ API
+# لأنها من أصله نفسه.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# سلامة النص: لا يُخزَّن رد الـ API في وسيط مشترك؛ حالة المراجعة
+	# والصلاحيات قد تختلف بين مستخدم وآخر.
+	@api path /api/* /health
+	handle @api {
+		header Cache-Control "no-store"
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+}

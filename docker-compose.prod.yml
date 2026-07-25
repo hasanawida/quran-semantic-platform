@@ -1,0 +1,88 @@
+# نشر الإنتاج — Postgres + API + الواجهة خلف وسيط.
+#
+# ما لا يفعله هذا الملف عمدًا:
+#   - لا يشغّل الهجرات تلقائيًا: تُنفَّذ بدور مالك منفصل خطوةً مستقلة
+#     (راجع docs/DEPLOYMENT_AR.md)، ودور التطبيق لا يملك DDL.
+#   - لا ينشئ حسابات تجريبية: ENVIRONMENT=production يمنعها.
+#   - لا يفتح منفذ قاعدة البيانات للخارج.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+      POSTGRES_USER: ${POSTGRES_OWNER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?required}
+      # يستعملهما سكربت التهيئة لإنشاء دور التطبيق غير المميز
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:?required}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # يُنفَّذ مرة واحدة عند أول تهيئة: ينشئ دور التطبيق. بدونه لا يستطيع
+      # الـ API الاتصال ويدخل حلقة إعادة تشغيل.
+      - ./ops/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  api:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: production
+      AUTO_CREATE_SCHEMA: "false"
+      ENABLE_DOCS: "false"
+      # دور تطبيق غير مميز — لا DDL ولا حذف من سجل التدقيق
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_APP_USER:?required}:${POSTGRES_APP_PASSWORD:?required}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET:?required}
+      ALLOWED_ORIGINS: ${PUBLIC_WEB_ORIGIN:?required}
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-120}
+      AUTH_RATE_LIMIT_REQUESTS: ${AUTH_RATE_LIMIT_REQUESTS:-10}
+      AI_FEATURES_ENABLED: "false"
+    networks: [internal, edge]
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        # يُدمج في حزمة المتصفح وقت البناء، فيجب أن يكون العنوان العام
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:?required}
+    restart: unless-stopped
+    depends_on: [api]
+    networks: [edge]
+
+  # الوسيط العكسي: هو وحده المنفذ إلى الخارج. يوحّد الأصل (‎/api للخلفية
+  # والباقي للواجهة) فلا يحتاج CORS، ويتولى TLS تلقائيًا عبر Let's Encrypt.
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api, web]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?required}
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  # قاعدة البيانات معزولة: لا تصلها الواجهة ولا الوسيط
+  internal:
+    internal: true
+  edge:
