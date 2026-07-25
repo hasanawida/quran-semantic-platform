@@ -48,6 +48,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # البيانات قبل البناء. `generateStaticParams` في /mushaf/[surah]
+      # يقرأ public/data/v1/surahs.json بـfs، فبدونها يسقط البناء بـENOENT
+      # قبل أن يصل إلى صفحة واحدة. نشرة الصفحات تفعل هذا وتنجح؛ وهذه
+      # الوظيفة لم تكن تفعله فبقيت حمراء ستة التزامات دون أن يوقف ذلك شيئًا.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install API package (for app.utils.arabic)
+        run: pip install -e apps/api
+      - name: Generate static data
+        env:
+          QSP_DATA_DIR: ${{ github.workspace }}/apps/api/data
+        run: python scripts/export-static/build_data.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -56,6 +71,11 @@ jobs:
       - name: Install
         working-directory: apps/web
         run: npm ci
+      # بناء الوضع المحلي (standalone) لا الثابت: يغطّي صفحات
+      # `page.node.tsx` التي يُسقطها التصدير الثابت، فيبقى المسار
+      # الكامل مفحوصًا. والتصدير الثابت تفحصه نشرة الصفحات.
       - name: Build
         working-directory: apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
         run: npm run build
