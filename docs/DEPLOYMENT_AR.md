@@ -157,12 +157,67 @@ Expo/React Native يستهلك المسارات نفسها، مع تخزين م�
 موقّعة ببصمات — تفصيله في `WEB_MOBILE_ROADMAP_AR.md`. لا يبدأ قبل أن
 يستقر عقد الـ API ويكتمل ضمان الجودة.
 
-## النسخ الاحتياطي (لم يُؤتمت بعد)
+## النسخ الاحتياطي
+
+**مؤتمت في التركيب.** خدمة `backup` تعمل على الشبكة الداخلية وحدها،
+وتأخذ `pg_dump -Fc` بدور المالك كل `BACKUP_INTERVAL_SECONDS` (يوميًا
+افتراضًا)، باحتفاظ متدرّج: ٧ يومية و٤ أسبوعية.
+
+> **لماذا هي شرط لا تحسين:** سجل التدقيق ملحق-فقط بحكم البناء — يمنعه
+> محرّك ORM ومحفّز Postgres معًا — أي **لا يُعاد بناؤه**. ففقد القاعدة
+> يفقد إسناد كل استيراد واعتماد ومراجعة وتصحيح، وهو ما بُني السجل
+> ليحفظه.
+
+### نسخة فورية قبل أي عملية خطرة
+
+قبل كل استيراد أو تفعيل إصدار:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec postgres \
-  pg_dump -U OWNER -Fc DB > backup-$(date +%F).dump
+docker compose -f docker-compose.prod.yml exec backup \
+  sh /usr/local/bin/backup.sh once
 ```
 
-سجل التدقيق ملحق-فقط، فاستعادة نسخة قديمة تفقد أثر ما بعدها. أي جدولة
-نسخ يجب أن تسبق أي عملية استيراد أو تفعيل إصدار.
+### التحقق من صلاحية النسخة — **لا تتخطَّ هذه**
+
+نسخة لم تُجرَّب ليست نسخة. السكربت يسترجع إلى قاعدة **مؤقتة** ويعدّ فيها،
+ولا يمسّ الإنتاج:
+
+```bash
+docker compose -f docker-compose.prod.yml exec backup \
+  sh /usr/local/bin/restore-check.sh /backups/daily/qsp-<الختم>.dump
+```
+
+يفشل برمز غير صفري إن لم يجد ١١٤ سورة و٦٢٣٦ آية وإصدارًا نشطًا واحدًا
+وسجل تدقيق غير فارغ.
+
+### ⚠ النسخ داخل الخادم ليست نسخًا احتياطيًا
+
+حجم `backup_data` يبقى بعد إعادة بناء الحاويات، لكنه **يذهب مع الخادم**
+إن ضاع. انقلها إلى تخزين خارجي — مهمّة `cron` على المضيف:
+
+```bash
+0 4 * * * docker compose -f /srv/qsp/docker-compose.prod.yml \
+  cp backup:/backups/daily /srv/qsp-offsite/ && \
+  rclone sync /srv/qsp-offsite remote:qsp-backups
+```
+
+### الاسترجاع الفعلي
+
+```bash
+# 1) أوقف التطبيق ليتوقف الكتابة (القاعدة تبقى تعمل)
+docker compose -f docker-compose.prod.yml stop api web
+# 2) استرجع بدور المالك
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  pg_restore --clean --if-exists --no-owner -U "$POSTGRES_OWNER" \
+  -d "$POSTGRES_DB" < backups/daily/qsp-<الختم>.dump
+# 3) أعد تحصين سجل التدقيق (‎--clean يسقط الصلاحيات)
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  psql -U "$POSTGRES_OWNER" -d "$POSTGRES_DB" < ops/sql/audit-hardening.sql
+# 4) شغّل، ثم افحص المواضع المرجعية
+docker compose -f docker-compose.prod.yml start api web
+docker compose -f docker-compose.prod.yml run --rm api \
+  python -m app.cli golden-check
+```
+
+> الخطوة ٣ ليست اختيارية: `pg_restore --clean` يُسقط الجدول ويعيد إنشاءه،
+> فتذهب صلاحياته المسحوبة ويصير سجل التدقيق قابلًا للتعديل من دور التطبيق.

@@ -59,6 +59,38 @@ services:
     depends_on: [api]
     networks: [edge]
 
+  # النسخ الاحتياطي: خدمة جانبية على الشبكة الداخلية وحدها.
+  #
+  # سجل التدقيق في هذه المنصة ملحق-فقط بحكم البناء، أي **لا يُعاد بناؤه**.
+  # ففقدُ القاعدة يفقد إسناد كل استيراد واعتماد ومراجعة وتصحيح — وهو ما
+  # بُني السجل ليحفظه. فالنسخ هنا شرط تشغيلي لا تحسين.
+  #
+  # تُؤخذ النسخة بدور **المالك** لا بدور التطبيق: الأخير لا يقرأ كل شيء.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:?required}
+      PGUSER: ${POSTGRES_OWNER:?required}
+      PGPASSWORD: ${POSTGRES_OWNER_PASSWORD:?required}
+      BACKUP_DIR: /backups
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
+    volumes:
+      - ./ops/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./ops/restore-check.sh:/usr/local/bin/restore-check.sh:ro
+      # حجم مُسمّى لا مجلد داخل الحاوية: يبقى بعد إعادة البناء.
+      # **وهذا ليس نسخًا خارج الخادم** — إن احترق الخادم ذهب الحجم معه.
+      # نقلُ النسخ إلى تخزين خارجي خطوة مستقلة في docs/DEPLOYMENT_AR.md.
+      - backup_data:/backups
+    entrypoint: ["/bin/sh", "/usr/local/bin/backup.sh"]
+    networks: [internal]
+
   # الوسيط العكسي: هو وحده المنفذ إلى الخارج. يوحّد الأصل (‎/api للخلفية
   # والباقي للواجهة) فلا يحتاج CORS، ويتولى TLS تلقائيًا عبر Let's Encrypt.
   proxy:
@@ -78,6 +110,7 @@ services:
 
 volumes:
   postgres_data:
+  backup_data:
   caddy_data:
   caddy_config:
 
