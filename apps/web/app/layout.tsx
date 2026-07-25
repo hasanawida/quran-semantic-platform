@@ -96,9 +96,28 @@ export default function RootLayout({
             <p>جميع النتائج الآلية تُوسم وتُفصل عن المعتمد.</p>
             <nav className="footer-links" aria-label="روابط المنصة">
               <Link href="/methodology">المنهج والمصادر</Link>
+              <Link href="/install">تثبيت التطبيق</Link>
               <Link href="/privacy">سياسة الخصوصية</Link>
               <Link href="/terms">شروط الاستعمال</Link>
             </nav>
+            <p className="footer-credit">
+              تطوير{" "}
+              <a
+                href="https://github.com/hasanawida"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                hasanawida
+              </a>{" "}
+              · شيفرة مفتوحة تحت{" "}
+              <a
+                href="https://github.com/hasanawida/quran-semantic-platform"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                AGPL-3.0
+              </a>
+            </p>
           </div>
         </footer>
       </body>

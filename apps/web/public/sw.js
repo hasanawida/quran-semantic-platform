@@ -28,6 +28,7 @@ const DATA_CACHE = `${VERSION}-data`;
 const SHELL_ASSETS = [
   "",
   "mushaf/",
+  "install/",
   "methodology/",
   "privacy/",
   "terms/",

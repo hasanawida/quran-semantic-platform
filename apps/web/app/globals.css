@@ -1755,3 +1755,10 @@ mark[data-root]::after {
     scroll-margin-block-start: calc(120px + var(--space-4));
   }
 }
+
+/* سطر نسبة التطوير في التذييل — أخفت من الروابط ولا يزاحمها */
+.footer-credit {
+  margin-block: var(--space-3) 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
