@@ -51,12 +51,25 @@ def test_golden_cases_file_resolves():
     assert path.exists(), describe_search("golden_roots.json")
 
 
-def test_resolution_does_not_depend_on_the_current_directory():
-    """تغيير مجلد العمل لا يُضيع الحزم — وهو ما كسر CI."""
+def test_the_environment_override_makes_resolution_cwd_independent(monkeypatch):
+    """العقد الحقيقي — وقد صحّحته CI:
+
+    الرجوع إلى مجلد العمل **يعتمد على مجلد العمل** بداهةً، فمع تثبيت
+    ناسخ (كما في CI وصورة الإنتاج) تُفقد الحزم إن تغيّر المجلد. ولذلك
+    يصرّح الإنتاج بـ`QSP_DATA_DIR` في Dockerfile: التصريح يجعل الحلّ
+    مستقلًا عن المجلد **قطعًا**، لا نجاةً بترتيب مسار البحث.
+
+    (كان هذا الاختبار يدّعي الاستقلال مطلقًا، فأسقطته CI — وكان محقًّا
+    في إسقاطه: الادعاء كان أوسع من التصميم.)"""
+    resolved = data_file("quran_bundle.json.gz")
+    assert resolved.exists()
+    monkeypatch.setenv(DATA_DIR_ENV, str(resolved.parent))
+
     original = Path.cwd()
     try:
         os.chdir(original.parent)
         assert data_file("quran_bundle.json.gz").exists()
+        assert data_file("morphology_qac04.json.gz").exists()
     finally:
         os.chdir(original)
 

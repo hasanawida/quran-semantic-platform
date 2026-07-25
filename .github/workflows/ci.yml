@@ -36,6 +36,9 @@ jobs:
       # في المخرجات لا في سببه.
       - name: Data bundles
         working-directory: apps/api
+        # التصريح بالمجلد كما يفعل الإنتاج (ENV QSP_DATA_DIR في Dockerfile)
+        env:
+          QSP_DATA_DIR: ${{ github.workspace }}/apps/api/data
         run: pytest tests/test_data_paths.py -q
       - name: Test
         working-directory: apps/api

@@ -29,6 +29,10 @@ COPY alembic ./alembic
 COPY alembic.ini ./
 # حزم البيانات الموثقة ببصماتها — بدونها لا يمكن بذر النص ولا الصرف
 COPY data ./data
+# تصريح صريح بمجلد البيانات بدل الاعتماد على أن /app يسبق site-packages
+# في مسار البحث — ذاك نجاةٌ بترتيب المسار لا بتصميم، وأي تغيير في طريقة
+# التشغيل كان يُسقطها. (كشفته CI في 2026-07-25.)
+ENV QSP_DATA_DIR=/app/data
 
 RUN useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app
