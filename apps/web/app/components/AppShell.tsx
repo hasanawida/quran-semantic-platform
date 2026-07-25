@@ -19,9 +19,18 @@ export default function AppShell() {
       process.env.NODE_ENV === "production" &&
       "serviceWorker" in navigator
     ) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        /* التسجيل ليس شرطًا لعمل الموقع */
-      });
+      // بصمة البناء في العنوان — بها وحدها يُبطَل المخزن عند نشر جديد.
+      //
+      // كان عامل الخدمة يقرأ `self.__QSP_BUILD__` وهو **غير معرَّف في
+      // المستودع كله**، فتبقى النسخة "qsp-v1" أبدًا ولا يُمسح مخزن
+      // القشرة قط. والأثر ليس بطء تحديث فحسب: صفحةٌ مخزَّنة قد تُظهر
+      // حالة مراجعة إصدارٍ أُبطل. (رصده فحص التصميم في 2026-07-25.)
+      const build = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+      navigator.serviceWorker
+        .register(`/sw.js?v=${encodeURIComponent(build)}`)
+        .catch(() => {
+          /* التسجيل ليس شرطًا لعمل الموقع */
+        });
     }
 
     return () => {

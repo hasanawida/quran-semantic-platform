@@ -11,6 +11,10 @@ COPY . .
 # NEXT_PUBLIC_* تُدمج في حزمة المتصفح وقت البناء، لذا تمرر كـ build arg
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# بصمة البناء: بها يُبطَل مخزن عامل الخدمة عند كل نشر. قيمة مختلفة لكل
+# بناء (وسم الإصدار أو بصمة الالتزام)، وإلا بقي الزوار على نسخة قديمة.
+ARG NEXT_PUBLIC_BUILD_ID=dev
+ENV NEXT_PUBLIC_BUILD_ID=$NEXT_PUBLIC_BUILD_ID
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build

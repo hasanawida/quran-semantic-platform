@@ -100,7 +100,9 @@ docker compose -f docker-compose.prod.yml exec -T postgres \
 docker compose -f docker-compose.prod.yml run --rm api python -m app.cli seed
 docker compose -f docker-compose.prod.yml run --rm api python -m app.cli pipeline
 
-# 7) الإقلاع الكامل
+# 7) الإقلاع الكامل — ومعه بصمة البناء
+#    بدونها لا يُبطَل مخزن عامل الخدمة، فيبقى الزوار على نسخة قديمة
+export BUILD_ID=$(git rev-parse --short HEAD)
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 

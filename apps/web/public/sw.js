@@ -9,13 +9,23 @@
       حتى لا يُظن المعروض هو الأحدث.
 */
 
-// يُحدَّث مع كل نشر (يُحقن وقت البناء عبر BUILD_ID عند توفره)
-const VERSION = "qsp-" + (self.__QSP_BUILD__ || "v1");
+// بصمة البناء تصل في عنوان تسجيل العامل نفسه: `/sw.js?v=<build>`.
+// (كان يُقرأ `self.__QSP_BUILD__` وهو غير معرَّف في المستودع كله، فتبقى
+//  النسخة "qsp-v1" أبدًا ولا يُبطَل المخزن عند نشر جديد — وقد يُعرض
+//  عندئذ حالةُ مراجعة إصدارٍ أُبطل. صُحّح في 2026-07-25.)
+const BUILD = new URL(self.location.href).searchParams.get("v") || "dev";
+const VERSION = `qsp-${BUILD}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const DATA_CACHE = `${VERSION}-data`;
 
 const SHELL_ASSETS = [
   "/",
+  // صفحات القراءة الأساسية: بدونها يُدفع من يفتحها بلا اتصال إلى
+  // الصفحة الرئيسة، فيظن الرابط معطوبًا لا الشبكة منقطعة.
+  "/mushaf",
+  "/methodology",
+  "/privacy",
+  "/terms",
   "/manifest.webmanifest",
   "/icon.svg",
   "/icon-192.png",

@@ -55,6 +55,10 @@ services:
       args:
         # يُدمج في حزمة المتصفح وقت البناء، فيجب أن يكون العنوان العام
         NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:?required}
+        # بصمة البناء — تُبطل مخزن عامل الخدمة عند كل نشر.
+        # مرّرها من الوسم أو بصمة الالتزام:
+        #   BUILD_ID=$(git rev-parse --short HEAD) docker compose ... build
+        NEXT_PUBLIC_BUILD_ID: ${BUILD_ID:-dev}
     restart: unless-stopped
     depends_on: [api]
     networks: [edge]
