@@ -17,9 +17,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  # الكتابة لأمرين: واجهة traffic تشترط صلاحية الدفع، والالتزام بالسجل
-  # التراكمي يحتاجها. ولا صلاحية أخرى.
+  # الكتابة للالتزام بالسجل التراكمي.
   contents: write
+  # وواجهة traffic تشترط أكثر من الدفع: صلاحية إدارة المستودع قراءةً.
+  # (أول تشغيل بـcontents وحدها ردّ 403 «Resource not accessible».)
+  administration: read
 
 concurrency:
   group: traffic
