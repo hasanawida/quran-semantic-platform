@@ -45,12 +45,16 @@ from app.models.morphology import (
     TokenRootDecisionRoot,
 )
 from app.models.quran import Ayah, QuranTextVersion, Surah
+from app.core.paths import data_file, describe_search
 from app.utils.arabic import normalize_arabic_search, tokenize_ayah
 from app.utils.morphology_tags import parse_features, pos_label
 
-_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
-MORPHOLOGY_BUNDLE_PATH = _DATA_DIR / "morphology_qac04.json.gz"
-GOLDEN_CASES_PATH = _DATA_DIR / "golden_roots.json"
+# تُحلّ عند الاستعمال لا عند الاستيراد: تخطيط التثبيت يختلف بين شجرة
+# المصدر وsite-packages وصورة الحاوية (انظر app/core/paths.py).
+MORPHOLOGY_BUNDLE_NAME = "morphology_qac04.json.gz"
+GOLDEN_CASES_NAME = "golden_roots.json"
+MORPHOLOGY_BUNDLE_PATH = data_file(MORPHOLOGY_BUNDLE_NAME)
+GOLDEN_CASES_PATH = data_file(GOLDEN_CASES_NAME)
 
 # الأدوار المؤهلة لاقتراح قرار جذر واعتماده (مراجعة لغوية)
 DECISION_PROPOSER_ROLES = {
@@ -75,12 +79,15 @@ class MorphologyError(Exception):
 
 
 def load_morphology_bundle(path: Path | None = None) -> dict:
-    target = path or MORPHOLOGY_BUNDLE_PATH
+    # يُعاد البحث في كل نداء: قد يتغيّر مجلد العمل أو متغير البيئة بعد
+    # الاستيراد، ولا معنى لتثبيت مسار خاطئ لحظة تحميل الوحدة.
+    target = path or data_file(MORPHOLOGY_BUNDLE_NAME)
     if not target.exists():
         raise MorphologyError(
             "BUNDLE_MISSING",
             "حزمة الصرف غير موجودة. ابنِها بـ scripts/import-quran/"
-            "build_morphology_bundle.py",
+            "build_morphology_bundle.py\n"
+            + describe_search(MORPHOLOGY_BUNDLE_NAME),
         )
     with gzip.open(target, "rt", encoding="utf-8") as handle:
         return json.load(handle)
@@ -1191,9 +1198,14 @@ class MorphologyService:
     # ---- 7) الجذور الذهبية ----------------------------------------------
     async def seed_golden_cases(self, actor_id: uuid.UUID | None = None) -> dict:
         """يحمّل المواضع المرجعية من ملفها (عملية idempotent)."""
-        if not GOLDEN_CASES_PATH.exists():
-            raise MorphologyError("GOLDEN_FILE_MISSING", "ملف المواضع المرجعية مفقود.")
-        data = json.loads(GOLDEN_CASES_PATH.read_text(encoding="utf-8"))
+        golden = data_file(GOLDEN_CASES_NAME)
+        if not golden.exists():
+            raise MorphologyError(
+                "GOLDEN_FILE_MISSING",
+                "ملف المواضع المرجعية مفقود.\n"
+                + describe_search(GOLDEN_CASES_NAME),
+            )
+        data = json.loads(golden.read_text(encoding="utf-8"))
         existing = {
             (case.surah_number, case.ayah_number, case.word_number): case
             for case in (await self.session.execute(select(GoldenRootCase))).scalars()

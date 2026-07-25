@@ -1,6 +1,18 @@
 # منصة الاستقراء الدلالي لجذور ألفاظ القرآن الكريم
 
-نسخة تأسيسية قابلة للتشغيل محليًا، مبنية على:
+[![CI](https://github.com/hasanawida/quran-semantic-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/hasanawida/quran-semantic-platform/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/رخصة_الشيفرة-AGPL--3.0-blue)](LICENSE)
+[![البيانات](https://img.shields.io/badge/البيانات-بشروط_مصادرها-orange)](NOTICE)
+
+> **قبل أن تبني على هذه المنصة:** الشيفرة حرة تحت AGPL-3.0، لكن البيانات
+> المستوردة تبقى بشروط أصحابها — وأهمّها قيد **«البحث غير التجاري»** في
+> رخصة مدونة ليدز. التفصيل في [NOTICE](NOTICE).
+
+منصة بحثية لدراسة جذور ألفاظ القرآن الكريم دراسةً لغوية: نصٌّ موثق ببصمته
+لا يُولَّد آليًا، وتحليلٌ صرفي منسوب لمصدره بحالة مراجعته، وخلافٌ علمي
+يُعرض ولا يُخفى.
+
+مبنية على:
 
 - Next.js للواجهة
 - FastAPI للخلفية

@@ -30,6 +30,13 @@ jobs:
           alembic upgrade head
           alembic downgrade base
           alembic upgrade head
+      # حزم البيانات شرطٌ لكل ما بعدها: بدونها لا نصّ ولا صرف. تُفحص
+      # مستقلةً وأولًا حتى يكون الفشل مقروءًا — أول تشغيل لـCI سقط بـ99
+      # اختبارًا كلها BUNDLE_MISSING، وأخذ تشخيصها وقتًا لأن الفشل ظهر
+      # في المخرجات لا في سببه.
+      - name: Data bundles
+        working-directory: apps/api
+        run: pytest tests/test_data_paths.py -q
       - name: Test
         working-directory: apps/api
         run: pytest

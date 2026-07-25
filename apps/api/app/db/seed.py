@@ -11,7 +11,6 @@ import gzip
 import hashlib
 import json
 import uuid
-from pathlib import Path
 
 from sqlalchemy import insert
 
@@ -20,20 +19,35 @@ from app.models.audit import AuditLog
 from app.models.enums import ConfidenceLevel, RecordStatus
 from app.models.language import Root, RootDerivation, RootOccurrence
 from app.models.quran import Ayah, QuranTextVersion, Surah
+from app.core.paths import data_file, describe_search
 from app.utils.arabic import normalize_arabic_search
 
-BUNDLE_PATH = Path(__file__).resolve().parents[2] / "data" / "quran_bundle.json.gz"
+BUNDLE_NAME = "quran_bundle.json.gz"
+
+
+def _resolve_bundle():
+    """مسار الحزمة، أو خطأ **يقول أين بُحث**.
+
+    كان الغياب يُعالَج بعودة صامتة `{"seeded": False}`، فتمضي التهيئة
+    وتبدو ناجحة ثم تسقط الاستعلامات لاحقًا بـ`NO_ACTIVE_VERSION` بعيدًا
+    عن السبب. وهو ما جعل تشخيص أول فشل لـCI أطول مما يجب. والصمت هنا
+    أسوأ من الفشل: منصةٌ بلا نص مصحف ليست منصة."""
+    target = data_file(BUNDLE_NAME)
+    if not target.exists():
+        raise FileNotFoundError(
+            "حزمة النص غير موجودة، فلا يمكن بذر المصحف.\n"
+            + describe_search(BUNDLE_NAME)
+        )
+    return target
 
 
 def _load_bundle() -> dict:
-    with gzip.open(BUNDLE_PATH, "rt", encoding="utf-8") as f:
+    with gzip.open(_resolve_bundle(), "rt", encoding="utf-8") as f:
         return json.load(f)
 
 
 async def seed_from_bundle() -> dict:
-    if not BUNDLE_PATH.exists():
-        return {"seeded": False, "reason": "bundle-missing"}
-
+    bundle_path = _resolve_bundle()
     bundle = _load_bundle()
     meta = bundle["meta"]
 
@@ -50,7 +64,7 @@ async def seed_from_bundle() -> dict:
             counting_system=meta["counting_system"],
             source_name=meta["sources"][0]["name"],
             source_reference=meta["sources"][0]["url"],
-            sha256_hash=hashlib.sha256(BUNDLE_PATH.read_bytes()).hexdigest(),
+            sha256_hash=hashlib.sha256(bundle_path.read_bytes()).hexdigest(),
             status=RecordStatus.IMPORTED,
             is_active=True,
         )
