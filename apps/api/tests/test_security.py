@@ -143,10 +143,15 @@ def test_production_refuses_to_start_with_the_default_jwt_secret():
 
     from app.core.config import INSECURE_JWT_SECRET, Settings, get_settings
 
-    saved = {k: os.environ.get(k) for k in ("ENVIRONMENT", "JWT_SECRET")}
+    saved = {
+        k: os.environ.get(k)
+        for k in ("ENVIRONMENT", "JWT_SECRET", "ALLOWED_ORIGINS")
+    }
     get_settings.cache_clear()
     try:
         os.environ["ENVIRONMENT"] = "production"
+        # أصل حقيقي: الحارس الآخر يرفض localhost وقيم القوالب في الإنتاج
+        os.environ["ALLOWED_ORIGINS"] = "https://qsp.test-domain.org"
         os.environ["JWT_SECRET"] = INSECURE_JWT_SECRET
         with pytest.raises(RuntimeError, match="JWT_SECRET"):
             get_settings()
@@ -160,6 +165,54 @@ def test_production_refuses_to_start_with_the_default_jwt_secret():
         get_settings.cache_clear()
         assert get_settings().is_production
         assert Settings().jwt_secret == "x" * 48
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        get_settings.cache_clear()
+        get_settings()
+
+
+def test_production_refuses_template_and_localhost_origins():
+    """`${VAR:?required}` في compose يرفض الفارغ وحده لا قيمة القالب.
+
+    فمن نسخ `.env.production.example` ولم يملأه يُقلع بأصل `example.org`
+    فينكسر CORS صامتًا على المتصفح ولا يظهر في سجلّ الخادم. الحارس هنا
+    لأن compose لا يستطيعه. (نبّهت إليه مراجعة خارجية في 2026-07-26.)"""
+    import os
+
+    from app.core.config import get_settings
+
+    saved = {
+        k: os.environ.get(k)
+        for k in ("ENVIRONMENT", "JWT_SECRET", "ALLOWED_ORIGINS")
+    }
+    try:
+        os.environ["ENVIRONMENT"] = "production"
+        os.environ["JWT_SECRET"] = "x" * 48
+
+        for placeholder in (
+            "https://example.org",
+            "https://example.com",
+            "https://example.org,https://real.org",
+        ):
+            os.environ["ALLOWED_ORIGINS"] = placeholder
+            get_settings.cache_clear()
+            with pytest.raises(RuntimeError, match="ALLOWED_ORIGINS"):
+                get_settings()
+
+        # وأصل التطوير لا يُقبل في الإنتاج
+        os.environ["ALLOWED_ORIGINS"] = "http://localhost:3000"
+        get_settings.cache_clear()
+        with pytest.raises(RuntimeError, match="localhost"):
+            get_settings()
+
+        # أما الأصل الحقيقي فيمرّ
+        os.environ["ALLOWED_ORIGINS"] = "https://qsp.example-real.org"
+        get_settings.cache_clear()
+        assert get_settings().is_production
     finally:
         for key, value in saved.items():
             if value is None:

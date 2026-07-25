@@ -66,4 +66,22 @@ def get_settings() -> Settings:
             "JWT_SECRET غير صالح للإنتاج: يجب ضبطه بسر قوي (32 محرفًا فأكثر) "
             "ولا يجوز ترك القيمة الافتراضية. ولّده بـ: openssl rand -base64 48"
         )
+
+    # قيم القوالب: `${VAR:?required}` في compose يرفض **الفارغ** وحده،
+    # ولا يرفض `example.org`. فمن نسخ `.env.production.example` ولم يملأه
+    # يُقلع بأصل خاطئ فينكسر CORS صامتًا على المتصفح. والحارس هنا لأن
+    # compose لا يستطيعه. (نبّهت إليه مراجعة خارجية في 2026-07-26.)
+    if settings.is_production:
+        for name, value in (("ALLOWED_ORIGINS", settings.allowed_origins),):
+            if any(token in value for token in ("example.org", "example.com")):
+                raise RuntimeError(
+                    f"{name} ما زال على قيمة القالب ({value}). املأ ملف "
+                    ".env بقيم موقعك الحقيقية قبل تشغيل الإنتاج."
+                )
+        if "localhost" in settings.allowed_origins:
+            raise RuntimeError(
+                "ALLOWED_ORIGINS يحوي localhost في الإنتاج — هذا أصل "
+                "تطوير لا أصل موقع منشور."
+            )
+
     return settings

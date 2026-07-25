@@ -1,3 +1,12 @@
+# بيئة التطوير المحلية.
+#
+# **كل المنافذ مقيَّدة بـ127.0.0.1 عمدًا.** الصيغة "5432:5432" تربط على
+# 0.0.0.0 أي على كل واجهات الشبكة، فتُكشف Postgres وRedis لكل من على
+# الشبكة المحلية — وكلمة مرور التطوير معروفة ومكتوبة في هذا الملف،
+# وRedis بلا كلمة مرور أصلًا. (نبّهت إليه مراجعة خارجية في 2026-07-26.)
+#
+# إن احتجت الوصول من جهاز آخر (تجربة على الهاتف مثلًا) فغيّرها عمدًا
+# ومؤقتًا، ولا تتركها مفتوحة.
 services:
   postgres:
     image: postgres:16
@@ -6,7 +15,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-quran_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_password}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./apps/api/sql/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
@@ -19,7 +28,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   api:
     build:
@@ -30,7 +39,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,7 +54,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - api
 
