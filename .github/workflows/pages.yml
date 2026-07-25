@@ -1,0 +1,98 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # موقع مشروع: /quran-semantic-platform  ·  موقع مستخدم: اتركها فارغة
+  BASE_PATH: /quran-semantic-platform
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install API package (for app.utils.arabic)
+        run: pip install -e apps/api
+
+      # البيانات أولًا: البناء يقرأ surahs.json بـfs في generateStaticParams
+      - name: Generate static data
+        env:
+          QSP_DATA_DIR: ${{ github.workspace }}/apps/api/data
+        run: python scripts/export-static/build_data.py
+
+      # حارس التطبيع: ثلاثة تنفيذات (بايثون، SQL، المتصفح) لا تفترق
+      - name: Normalizer parity (browser vs python)
+        working-directory: apps/api
+        run: pytest tests/test_browser_normalizer_matches_python.py -q
+
+      - name: No scripture in source
+        working-directory: apps/api
+        run: pytest tests/test_no_scripture_in_source.py -q
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build static export
+        working-directory: apps/web
+        env:
+          QSP_STATIC: "1"
+          NEXT_PUBLIC_QSP_STATIC: "1"
+          NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
+          # بصمة البناء — بها وحدها يُبطَل مخزن عامل الخدمة عند كل نشر
+          NEXT_PUBLIC_BUILD_ID: ${{ github.sha }}
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
+
+      # Jekyll يحذف كل مجلد يبدأ بشرطة سفلية — أي `_next` كله
+      - name: Disable Jekyll
+        run: touch apps/web/out/.nojekyll
+
+      - name: Enforce size budget
+        run: |
+          BYTES=$(du -sb apps/web/out | cut -f1)
+          FILES=$(find apps/web/out -type f | wc -l)
+          echo "out/ = $BYTES bytes in $FILES files"
+          # المقيس اليوم ≈ 22 م.ب في ≈ 500 ملف. السقف 100 م.ب يترك
+          # هامشًا واسعًا ويكشف أي عودة إلى التوليد الشامل فورًا.
+          test "$BYTES" -lt 104857600
+          test "$FILES" -lt 3000
+          test -f apps/web/out/data/v1/manifest.json
+          test -f apps/web/out/mushaf/114/index.html
+          test -f apps/web/out/404.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
