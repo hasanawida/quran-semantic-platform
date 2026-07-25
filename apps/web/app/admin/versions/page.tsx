@@ -86,25 +86,15 @@ export default function VersionsPage() {
     }
   }
 
-  async function importDemo() {
-    const suffix = Math.random().toString(36).slice(2, 7);
-    await act(
-      "/admin/quran-versions/import",
-      {
-        version_code: `demo-${suffix}`,
-        title: "نسخة تجريبية للمراجعة",
-        riwayah: "حفص",
-        script_type: "عثماني",
-        counting_system: "كوفي",
-        source_name: "إدخال تجريبي",
-        ayahs: [
-          { surah: 1, ayah: 1, text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ" },
-          { surah: 1, ayah: 2, text: "ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ" },
-        ],
-      },
-      "تم استيراد نسخة تجريبية."
-    );
-  }
+  // حُذف زرّ «استيراد نسخة تجريبية» في 2026-07-25.
+  //
+  // كان يبني إصدار نص من **آيتين مكتوبتين نصًّا في هذا الملف** باسم مصدر
+  // «إدخال تجريبي»، ويُشحن في حزمة الإنتاج لكل من يملك صلاحية الإدارة.
+  // وهو خرق مباشر للخط الأحمر الأول: النص القرآني لا يُكتب في الشيفرة ولا
+  // يدخل المنصة إلا من ملف مصدري ببصمته عبر مسار استيراد موثق.
+  //
+  // الاستيراد الحقيقي مسار إداري مقصود: `POST /admin/quran-versions/import`
+  // بحمولة ملف مصدر كامل، أو `python -m app.cli seed` من الحزمة المبنية.
 
   if (loading) return <main className="container"><p>جارٍ التحميل…</p></main>;
 
@@ -142,9 +132,12 @@ export default function VersionsPage() {
           لا يعتمد مراجع عمله، ويلزم مراجعان مختلفان، وإصدار نشط واحد فقط.
         </p>
         {canManage && (
-          <button className="primary" onClick={importDemo}>
-            + استيراد نسخة تجريبية
-          </button>
+          <p className="lead-sm">
+            الاستيراد يجري من ملف مصدري ببصمته عبر{" "}
+            <code>POST /admin/quran-versions/import</code>، أو من الحزمة
+            المبنية بأمر <code>python -m app.cli seed</code>. ولا يُدخَل نص
+            من الواجهة: المصدر يجب أن يكون معلوم الطبعة والبصمة.
+          </p>
         )}
       </section>
 
@@ -186,7 +179,10 @@ export default function VersionsPage() {
                     onClick={() =>
                       act(
                         `/admin/quran-versions/${v.id}/validate`,
-                        { require_full: false },
+                        // المصحف كامل شرطٌ لا خيار: 114 سورة و6236 آية.
+                        // كان `false` فتجتاز نسخة ناقصة التحقق البنيوي ثم
+                        // تمضي إلى الاعتماد والتفعيل. (صُحّح 2026-07-25.)
+                        { require_full: true },
                         "تم التحقق البنيوي."
                       )
                     }

@@ -3,7 +3,8 @@
 الاستيراد عملية إدارية موثقة لا تجري تلقائيًا عند الإقلاع: هي بطيئة
 (~128 ألف مقطع)، ويجب أن تُسجَّل في سجل التدقيق بفاعل معروف.
 
-    python -m app.cli bootstrap         # مخطط + بذر + خط الصرف كاملًا
+    python -m app.cli seed              # بذر النص وحده — **مسار الإنتاج**
+    python -m app.cli bootstrap         # مخطط + بذر + خط الصرف — تطوير فقط
     python -m app.cli pipeline          # ترميز + استيراد + اشتقاق + فحص
     python -m app.cli tokenize
     python -m app.cli import-morphology [--surahs 1,112,113,114]
@@ -44,6 +45,19 @@ async def _run(command: str, surahs: set[int] | None) -> int:
         return result
 
     try:
+        if command == "seed":
+            from app.db.init_db import SeedError, seed_only
+
+            started = time.time()
+            try:
+                report = await seed_only()
+            except SeedError as exc:
+                print(f"خطأ: {exc}", file=sys.stderr)
+                return 3
+            print(f"  بذر النص: {json.dumps(report, ensure_ascii=False)}")
+            print(f"    ({time.time() - started:.1f} ثانية)")
+            return 0
+
         if command == "bootstrap":
             from app.db.init_db import init_db
 
@@ -93,6 +107,7 @@ def main() -> None:
     parser.add_argument(
         "command",
         choices=[
+            "seed",
             "bootstrap",
             "pipeline",
             "tokenize",

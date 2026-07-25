@@ -26,9 +26,46 @@ async def is_seeded() -> bool:
         return result.first() is not None
 
 
+class SeedError(RuntimeError):
+    """يوقف البذر برسالة تقول ما العمل، لا بأثر استثناء."""
+
+
+async def seed_only() -> dict:
+    """يبذر النص من الحزمة **بمعزل عن حارس إنشاء المخطط**.
+
+    هذا هو مسار الإنتاج. `init_db()` أدناه تعود مبكرًا حين
+    `AUTO_CREATE_SCHEMA=false` — وهي قيمة الإنتاج في `Dockerfile` وفي
+    `docker-compose.prod.yml` — فكان أمر البذر الموثَّق يخرج بلا أن يبذر
+    شيئًا، ثم يسقط خط المعالجة بـ`NO_ACTIVE_VERSION`، ويبقى موقع حيّ
+    بقاعدة فارغة. (رصده فحص جاهزية النشر في 2026-07-25.)
+
+    الفصل صحيح منطقيًا كذلك: البذر **إدخال بيانات** لا DDL، فدور التطبيق
+    غير المميز يملكه، والمخطط تنشئه Alembic خطوةً مستقلة بدور المالك.
+
+    يُرجع تقريرًا، ولا يبذر مرتين: تكراره آمن."""
+    try:
+        already = await is_seeded()
+    except Exception as exc:  # جدول مفقود ⇐ المخطط لم يُهاجَر بعد
+        raise SeedError(
+            "تعذّر قراءة جدول الآيات. شغّل الهجرات أولًا:\n"
+            "  alembic upgrade head\n"
+            f"(الأصل: {type(exc).__name__})"
+        ) from exc
+
+    if already:
+        return {"seeded": False, "reason": "القاعدة مبذورة أصلًا"}
+
+    from app.db.seed import seed_from_bundle
+
+    await seed_from_bundle()
+    return {"seeded": True}
+
+
 async def init_db() -> None:
     """يُستدعى عند الإقلاع في التطوير: ينشئ المخطط ويبذر من الحزمة إن كانت
-    القاعدة فارغة."""
+    القاعدة فارغة.
+
+    **لا يُستعمل في الإنتاج** — استعمل `seed_only()` عبر `app.cli seed`."""
     if not settings.auto_create_schema:
         return
     await create_schema()

@@ -200,7 +200,10 @@ class TokenRootDecision(UUIDMixin, TimestampMixin, Base):
 
 
 class TokenRootDecisionRoot(Base):
-    """جذر ضمن قرار — كلمة واحدة قد تحمل أكثر من جذر (يٰبْنَؤُمَّ = بنو + أمم)."""
+    """جذر ضمن قرار — كلمة واحدة قد تحمل أكثر من جذر.
+
+    مثاله في المصحف عند 20:94 — كلمة واحدة أصلها «بنو» و«أمم». ويُشار
+    إلى الموضع ولا يُقتبس النص: القاعدة أن النص يُقرأ من سجل الآية."""
 
     __tablename__ = "token_root_decision_roots"
 

@@ -48,17 +48,51 @@ docker compose -f docker-compose.prod.yml run --rm \
 
 يُنشئ هذا المخطط كاملًا مع **محفّز حماية سجل التدقيق** في Postgres.
 
+### 3‑ب) تحصين سجل التدقيق (بدور المالك، بعد الهجرات)
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  psql -U "$POSTGRES_OWNER" -d "$POSTGRES_DB" \
+  < ops/sql/audit-hardening.sql
+```
+
+يسحب صلاحية `UPDATE` و`DELETE` على `audit_logs` من دور التطبيق ومن
+`PUBLIC` — طبقة ثالثة تحت منع ORM ومحفّز الهجرة.
+
+> **لماذا خطوة منفصلة:** الملف يشير إلى جدول تنشئه Alembic، فلا يصحّ
+> تنفيذه عند تهيئة القاعدة. كان موضوعًا في `ops/postgres-init/` وهو
+> مركَّب على `/docker-entrypoint-initdb.d`، فكان **يُجهض أول إقلاع**
+> بخطأ «relation does not exist» تحت `ON_ERROR_STOP=1`. نُقل إلى
+> `ops/sql/` في 2026-07-25.
+
 ## 4) البذر والاستيراد (مرة واحدة، موثقة)
 
 ```bash
 docker compose -f docker-compose.prod.yml run --rm api \
-  python -m app.cli bootstrap
+  python -m app.cli seed
 ```
 
-يبذر النص من `data/quran_bundle.json.gz`، يرمّز الكلمات، يستورد التحليل
-الصرفي (128,219 مقطعًا)، يشتق مواضع الجذور، ثم يفحص المواضع المرجعية.
-كل خطوة تُسجَّل في سجل التدقيق. الاستيراد يستغرق دقيقة تقريبًا على
-Postgres.
+يبذر السور والآيات من `data/quran_bundle.json.gz` ويُنشئ إصدار النص
+ويُفعّله. **الأمر يعمل في الإنتاج** حيث `AUTO_CREATE_SCHEMA=false`،
+لأن البذر إدخال بيانات لا إنشاء مخطط. وهو **يرفض** العمل إن كانت
+القاعدة مبذورة أصلًا، فتكراره آمن.
+
+ثم خط المعالجة:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm api \
+  python -m app.cli pipeline
+```
+
+يرمّز الكلمات، ويستورد التحليل الصرفي (128,219 مقطعًا)، ويشتق مواضع
+الجذور، ثم يفحص المواضع المرجعية الـ132. كل خطوة تُسجَّل في سجل
+التدقيق. يستغرق دقيقة تقريبًا على Postgres، ويخرج برمز غير صفري إن
+سقط أي موضع مرجعي.
+
+> **لا تستعمل `bootstrap` في الإنتاج.** هو أمر تطوير يمرّ عبر
+> `init_db()` التي تعود مبكرًا حين `AUTO_CREATE_SCHEMA=false` — فكان
+> يخرج بلا بذر ثم يسقط بـ`NO_ACTIVE_VERSION`، ويترك موقعًا حيًّا بقاعدة
+> فارغة. (صُحّح في 2026-07-25.)
 
 ## 5) الإقلاع
 
