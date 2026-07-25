@@ -71,6 +71,11 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
           # بصمة البناء — بها وحدها يُبطَل مخزن عامل الخدمة عند كل نشر
           NEXT_PUBLIC_BUILD_ID: ${{ github.sha }}
+          # قياس الاستعمال: يُفعَّل بإضافة متغيّر المستودع UMAMI_ID
+          # (Settings ▸ Secrets and variables ▸ Actions ▸ Variables).
+          # بلا ضبطه لا يُشحن نصٌّ خارجي، والموقع كما هو اليوم.
+          # وما يُجمع مصرَّحٌ به كاملًا في صفحة /privacy.
+          NEXT_PUBLIC_UMAMI_ID: ${{ vars.UMAMI_ID }}
           NEXT_TELEMETRY_DISABLED: "1"
         run: npm run build
 

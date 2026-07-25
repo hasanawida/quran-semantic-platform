@@ -8,7 +8,7 @@
 > المستوردة تبقى بشروط أصحابها — وأهمّها قيد **«البحث غير التجاري»** في
 > رخصة مدونة ليدز. التفصيل في [NOTICE](NOTICE).
 
-**تطوير:** [hasanawida](https://github.com/hasanawida) · **الموقع:** <https://hasanawida.github.io/quran-semantic-platform/>
+**تطوير:** [حسن عويضة](https://github.com/hasanawida) · **الموقع:** <https://hasanawida.github.io/quran-semantic-platform/>
 
 منصة بحثية لدراسة جذور ألفاظ القرآن الكريم دراسةً لغوية: نصٌّ موثق ببصمته
 لا يُولَّد آليًا، وتحليلٌ صرفي منسوب لمصدره بحالة مراجعته، وخلافٌ علمي

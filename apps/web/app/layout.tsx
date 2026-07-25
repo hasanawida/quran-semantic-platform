@@ -30,6 +30,12 @@ const uiFont = Noto_Sans_Arabic({
 const SITE_DESCRIPTION =
   "منصة بحثية موثقة لدراسة جذور ألفاظ القرآن الكريم: نص موثق ببصمة، تحليل منسوب لمصادره، مراجعة مستقلة، وتقارير قابلة للتتبع.";
 
+// قياس الاستعمال: يُفعَّل بضبط NEXT_PUBLIC_UMAMI_ID وقت البناء وحده.
+// بلا معرّف لا يُشحن نصٌّ خارجي البتة — وهذا هو الوضع الافتراضي.
+const UMAMI_ID = process.env.NEXT_PUBLIC_UMAMI_ID;
+const UMAMI_HOST =
+  process.env.NEXT_PUBLIC_UMAMI_HOST ?? "https://cloud.umami.is";
+
 export const metadata: Metadata = {
   title: {
     default: "منصة الاستقراء الدلالي لجذور ألفاظ القرآن الكريم",
@@ -80,6 +86,18 @@ export default function RootLayout({
       className={`${quranFont.variable} ${bodyFont.variable} ${uiFont.variable}`}
     >
       <body>
+        {/* قياس الاستعمال — معطَّل ما لم يُضبط المعرّف وقت البناء.
+            مصرَّحٌ به كاملًا في /privacy: يُرسل مسار الصفحة (ومنه
+            السورة والآية والجذر المبحوث)، ومدة الزيارة، والمُحيل،
+            والدولة والجهاز. بلا كوكيز وبلا تخزين IP لدى الخدمة.
+            وتعطيله يكفي فيه حذف المتغيّر من سير النشر — لا تعديل شيفرة. */}
+        {UMAMI_ID && (
+          <script
+            defer
+            src={UMAMI_HOST + "/script.js"}
+            data-website-id={UMAMI_ID}
+          />
+        )}
         <a href="#main" className="skip-link">
           الانتقال إلى المحتوى
         </a>
@@ -107,7 +125,7 @@ export default function RootLayout({
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                hasanawida
+                حسن عويضة
               </a>{" "}
               · شيفرة مفتوحة تحت{" "}
               <a
