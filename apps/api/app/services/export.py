@@ -128,6 +128,30 @@ class ExportService:
         }
 
     @staticmethod
+    def attribution_lines(provenance: dict) -> list[str]:
+        """أسطر الإسناد، **مشتقّة من بيان الأصول لا مكتوبة يدويًا**.
+
+        رخصتا المصدرين تشترطان الإسناد **ورابط المصدر** معًا: تنزيل
+        (النقل مع الإسناد والرابط) وليدز (GNU GPL بالإسناد والرابط).
+        وكان CSV يخرج بنص الآيات وجذورها بلا اسم مصدر ولا رابط، فيفارق
+        الملفُ نسبَه أولَ ما يُنزَّل — وهو ما بُني `EXPORT_NOTICE` لمنعه.
+        (رصده فحص جاهزية النشر في 2026-07-25.)
+
+        والاشتقاق من `provenance()` مقصود: نسخة يدوية ثانية تتعتّق ويسكت
+        عن تعتّقها الاختبار."""
+        text = provenance["text_version"]
+        lines = [
+            f"نص المصحف: {text['source_name']} — {text['source_reference']} "
+            f"— إصدار {text['version_code']} — بصمة {text['sha256']}"
+        ]
+        for source in provenance["morphology_sources"]:
+            lines.append(
+                f"التحليل الصرفي: {source['name']} — {source['url']} — "
+                f"{source['license']} — بصمة {source['file_sha256']}"
+            )
+        return lines
+
+    @staticmethod
     def _seal(payload: dict) -> dict:
         """يضيف بصمة المخرَج إلى نفسه — يُحتسب على المحتوى بلا البصمة."""
         body = json.dumps(payload, ensure_ascii=False, sort_keys=True)
@@ -209,6 +233,8 @@ class ExportService:
         # تعليق البيان أولًا حتى لا ينفصل الجدول عن نسبه
         buffer.write(f"# الجذر: {root.display_root} ({root.normalized_root})\n")
         buffer.write(f"# الحالة: {root.status.value}\n")
+        for line in self.attribution_lines(await self.provenance()):
+            buffer.write(f"# {line}\n")
         buffer.write(f"# تنبيه: {EXPORT_NOTICE}\n")
         writer = csv.writer(buffer, lineterminator="\n")
         writer.writerow(
@@ -325,14 +351,13 @@ class ExportService:
             "",
             f"- إصدار النص: {text_version['title']} "
             f"({text_version['version_code']}، {text_version['riwayah']})",
-            f"- بصمة الإصدار: `{text_version['sha256']}`",
             f"- الآيات: {provenance['counts']['ayahs']} | "
             f"الجذور: {provenance['counts']['roots']}",
+            "",
+            "### الإسناد",
+            "",
         ]
-        for source in provenance["morphology_sources"]:
-            lines.append(
-                f"- مصدر صرفي: {source['name']} ({source['code']}) — "
-                f"{source['license']} — بصمة `{source['file_sha256']}`"
-            )
+        # الإسناد مشتقّ من بيان الأصول — لا يُكتب هنا ثانيةً فيتعتّق
+        lines += [f"- {line}" for line in self.attribution_lines(provenance)]
         lines += ["", f"**بصمة هذا المخرَج:** `{payload['export_sha256']}`", ""]
         return "\n".join(lines)

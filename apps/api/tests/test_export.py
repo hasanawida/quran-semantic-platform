@@ -169,6 +169,53 @@ def test_root_csv_export_keeps_the_notice_inside_the_file():
     assert text.count("\n") >= 6
 
 
+def test_root_csv_export_names_both_sources_with_their_links():
+    """رخصتا المصدرين تشترطان الإسناد **والرابط**، والملف يُنزَّل ويُعاد نشره.
+
+    كان الاختبار أعلاه يكتفي بوجود «# تنبيه:» فمرّت الثغرة خضراء: ملف فيه
+    نص الآيات وجذورها بلا اسم مصدر ولا رابط. (رصده فحص جاهزية النشر.)"""
+    text = client().get("/api/v1/export/roots/ع ص ر/csv").text
+    header = text.split("surah_number")[0]  # التعليق الذي يسبق الجدول
+
+    # مصدر النص ورابطه
+    assert "Tanzil" in header
+    assert "tanzil.net" in header
+    # ومصدر التحليل الصرفي ورابطه ورخصته
+    assert "corpus.quran.com" in header
+    assert "GPL" in header
+    # وبصمتان تُثبتان أي نسختين بالضبط
+    assert header.count("بصمة") >= 2
+
+
+def test_attribution_lines_are_derived_from_provenance_not_hand_written():
+    """يتغيّر المصدر ⇐ يتغيّر الإسناد. نسخة يدوية ثانية تتعتّق بصمت."""
+    from app.services.export import ExportService
+
+    lines = ExportService.attribution_lines(
+        {
+            "text_version": {
+                "source_name": "مصدر آخر",
+                "source_reference": "https://example.org/other",
+                "version_code": "other-1",
+                "sha256": "c" * 64,
+            },
+            "morphology_sources": [
+                {
+                    "name": "محلل آخر",
+                    "url": "https://example.org/morph",
+                    "license": "رخصة اختبارية",
+                    "file_sha256": "d" * 64,
+                }
+            ],
+        }
+    )
+    assert len(lines) == 2
+    assert "example.org/other" in lines[0]
+    assert "tanzil" not in lines[0].lower()
+    assert "example.org/morph" in lines[1]
+    assert "corpus.quran.com" not in lines[1]
+
+
 def test_unknown_root_export_is_404():
     response = client().get("/api/v1/export/roots/زخذف")
     assert response.status_code == 404
