@@ -3,6 +3,10 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # لقطة الحركة تكتب في docs/traffic/ وحدها، ولا معنى لإعادة بناء
+    # الموقع كله ونشره من أجلها.
+    paths-ignore:
+      - "docs/traffic/**"
   workflow_dispatch:
 
 permissions:

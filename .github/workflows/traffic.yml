@@ -1,0 +1,56 @@
+name: Repo traffic snapshot
+
+# ما يقيسه وما لا يقيسه — والفرق ليس تفصيلًا:
+#
+# يقيس مشاهدات **صفحة المستودع على github.com** ونسخه (clones).
+# ولا يقيس زيارات الموقع المنشور على GitHub Pages: تلك سجلّات عند GitHub
+# لا تُصدَّر لصاحب الموقع. لقياس زوّار الموقع نفسه انظر قسم «قياس
+# الاستعمال» في docs/DEPLOYMENT_AR.md.
+#
+# ولماذا يوميًا: نافذة الواجهة أربعة عشر يومًا فقط، فما لا يُلتقط يسقط
+# بلا رجعة. واللقطة تُدمج في سجل تراكمي لا تُلحق به.
+
+on:
+  schedule:
+    # 03:17 UTC — بعيدًا عن رأس الساعة حيث تزدحم طوابير GitHub
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  # الكتابة لأمرين: واجهة traffic تشترط صلاحية الدفع، والالتزام بالسجل
+  # التراكمي يحتاجها. ولا صلاحية أخرى.
+  contents: write
+
+concurrency:
+  group: traffic
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch traffic
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/traffic/views" > /tmp/views.json
+          gh api "repos/${GITHUB_REPOSITORY}/traffic/clones" > /tmp/clones.json
+
+      - name: Merge into history
+        run: |
+          python3 scripts/repo-traffic/merge_traffic.py \
+            /tmp/views.json /tmp/clones.json docs/traffic/repo-traffic.csv
+
+      - name: Commit if changed
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/traffic/repo-traffic.csv
+          # لا التزام فارغ: أكثر الأيام لا يتغيّر فيها شيء
+          git diff --cached --quiet || \
+            git commit -m "chore(traffic): لقطة يومية لحركة المستودع"
+          git push
