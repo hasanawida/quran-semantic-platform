@@ -17,11 +17,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  # الكتابة للالتزام بالسجل التراكمي.
+  # الكتابة للالتزام بالسجل التراكمي — وهي أقصى ما يفيد هنا.
+  #
+  # **حدٌّ مُختبَر لا مفترَض:** واجهة traffic تشترط صلاحية إدارة
+  # المستودع، ورمز GitHub التلقائي لا يملكها ولا يُمنح إياها:
+  # `administration` ليست مفتاحًا مقبولًا في permissions أصلًا (يردّ
+  # GitHub بـ422)، والتشغيل بـcontents وحدها ردّ 403. فيلزم رمز شخصي،
+  # وإنشاؤه بيد صاحب المستودع لا بيد أحد سواه.
   contents: write
-  # وواجهة traffic تشترط أكثر من الدفع: صلاحية إدارة المستودع قراءةً.
-  # (أول تشغيل بـcontents وحدها ردّ 403 «Resource not accessible».)
-  administration: read
 
 concurrency:
   group: traffic
@@ -33,20 +36,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # يتخطّى بوضوح بدل أن يفشل: بلا الرمز الشخصي لا شيء يمكن جلبه،
+      # وسيرٌ أحمرُ كل يوم بلا سبب يُصلَح يُعلَّم ضجيجًا فيُهمَل — ثم
+      # يُهمَل معه ما يستحق الانتباه.
       - name: Fetch traffic
+        id: fetch
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.TRAFFIC_TOKEN }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::notice::سرّ TRAFFIC_TOKEN غير مضبوط — تُخطّى اللقطة."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           gh api "repos/${GITHUB_REPOSITORY}/traffic/views" > /tmp/views.json
           gh api "repos/${GITHUB_REPOSITORY}/traffic/clones" > /tmp/clones.json
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
 
       - name: Merge into history
+        if: steps.fetch.outputs.skipped == 'false'
         run: |
           python3 scripts/repo-traffic/merge_traffic.py \
             /tmp/views.json /tmp/clones.json docs/traffic/repo-traffic.csv
 
       - name: Commit if changed
+        if: steps.fetch.outputs.skipped == 'false'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
