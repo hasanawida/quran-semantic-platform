@@ -250,6 +250,7 @@ python scripts/build-golden-cases.py
 
 ## وثائق إضافية
 
+- [`SCIENTIFIC_CONSTITUTION_AR.md`](SCIENTIFIC_CONSTITUTION_AR.md) — **الدستور العلمي**: حاكمٌ على الشيفرة، يوافق عليه كل مطوّر ومراجع قبل العمل.
 - `docs/SOURCES_AND_DISAGREEMENTS_AR.md` — تقرير اللجنة: المصادر برخصها وحدودها، وسبعة مواضع خلاف بموقف المنصة من كلٍّ.
 - `docs/SOURCE_DECISIONS_AR.md` — سجل قرار الشاهد الثاني: تحقق مستقل من رخص ثمانية مرشحين، وحكم اللجنة في كلٍّ، ولماذا لم يُعتمد أحدها للجذور.
 - `docs/PHASE_D_MORPHOLOGY_AR.md` — خط الصرف متعدد المصادر وفصل البسملة والتحقق.

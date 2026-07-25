@@ -1762,3 +1762,17 @@ mark[data-root]::after {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
+
+/* شارة «نسخة تجريبية» — فوق كل صفحة، بلون تنبيه لا خطأ:
+   الحال ليست عطبًا، لكنها ليست اعتمادًا كذلك. */
+.beta-bar {
+  background: var(--color-notice-bg);
+  border-block-end: 1px solid var(--color-notice-border);
+  color: var(--color-notice-text);
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+  text-wrap: pretty;
+}

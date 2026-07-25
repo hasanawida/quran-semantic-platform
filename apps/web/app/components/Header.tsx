@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 
+// الموقع الثابت لا يحوي صفحات المصادقة والكتابة: ملفاتها
+// `page.node.tsx` فتنعدم من البناء. فرابطٌ إليها يعطي 404.
+const STATIC = process.env.NEXT_PUBLIC_QSP_STATIC === "1";
+
 import { ROLE_LABELS, useAuth } from "../lib/auth";
 
 function BookIcon() {
@@ -55,26 +59,30 @@ export default function Header() {
           <Link href="/morphology" className="nav-link">
             البحث الصرفي
           </Link>
-          <Link href="/claims" className="nav-link">
-            الادعاءات
-          </Link>
+          {!STATIC && (
+            <Link href="/claims" className="nav-link">
+              الادعاءات
+            </Link>
+          )}
           <Link href="/methodology" className="nav-link">
             المنهج والمصادر
           </Link>
           <Link href="/provenance" className="nav-link">
             بيان الأصول
           </Link>
-          {user && (
+          {!STATIC && user && (
             <Link href="/review" className="nav-link">
               صندوق المراجعة
             </Link>
           )}
-          {hasRole(...MANAGE_ROLES) && (
+          {!STATIC && hasRole(...MANAGE_ROLES) && (
             <Link href="/admin/versions" className="nav-link">
               إصدارات النص
             </Link>
           )}
-          {loading ? null : user ? (
+          {/* في الموقع الثابت لا صفحة دخول أصلًا، وuser فارغ دائمًا —
+              فبلا هذا الشرط يظهر زرّ «دخول» ويعطي 404. */}
+          {STATIC ? null : loading ? null : user ? (
             <div className="user-chip">
               <span className="user-name">{user.display_name}</span>
               <span className="user-roles">

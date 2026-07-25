@@ -51,8 +51,13 @@ def raw_lines() -> dict[tuple[int, int], str]:
         )
     lines: dict[tuple[int, int], str] = {}
     for line in RAW_TEXT.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
+        # `rstrip("\r\n")` لا `strip()`: الاختبار يدّعي مطابقة **بايتية**،
+        # و`strip()` يحذف كل ما `isspace()` — ومنه المسافة الفاصلة نفسها
+        # في آخر السطر والمسافة غير الفاصلة U+00A0. فلو ضاعت مسافةٌ من
+        # المصدر لضاعت من الطرفين معًا فمرّ الاختبار على خطأ. والحذف هنا
+        # يقتصر على فاصل الأسطر الذي يضيفه الملف لا النص.
+        line = line.rstrip("\r\n")
+        if not line.strip() or line.startswith("#"):
             continue
         surah, ayah, text = line.split("|", 2)
         lines[(int(surah), int(ayah))] = text
