@@ -17,6 +17,7 @@ from app.db.audit import record_audit
 from app.db.base import utcnow
 from app.models.enums import RecordStatus
 from app.models.quran import Ayah, QuranTextVersion
+from app.utils.arabic import normalize_arabic_search
 
 # الأدوار المؤهَّلة لاعتماد إصدار نص (مراجعون مستقلون)
 APPROVER_ROLES = {
@@ -115,6 +116,12 @@ class TextVersionService:
                     ayah_number=a,
                     uthmani_text=t,
                     text_hash=hashlib.sha256(t.encode("utf-8")).hexdigest(),
+                    # مفتاح البحث يُشتق هنا لا يُترك فارغًا: كان هذا المسار
+                    # — وهو المسار الرسمي للاستيراد — يهمله، فأي إصدار
+                    # يُستورد ويُفعَّل عبره يجعل البحث يعيد صفرًا **صامتًا
+                    # بلا رسالة خطأ**. والتطبيع للبحث وحده ولا يمسّ
+                    # `uthmani_text` المعروض.
+                    plain_search_text=normalize_arabic_search(t),
                 )
                 for s, a, t in ayahs
             ]
@@ -156,6 +163,23 @@ class TextVersionService:
             expected = list(range(1, len(nums) + 1))
             if sorted(nums) != expected:
                 issues.append(f"تسلسل آيات غير صحيح في السورة {s}")
+
+        # إصدار بلا مفاتيح بحث يعمل تمامًا في العرض ويعيد صفرًا في البحث
+        # بلا أي إنذار — وهو أسوأ أنواع العطب. فيُكشف هنا لا عند المستعمل.
+        blind = await self.session.scalar(
+            select(func.count())
+            .select_from(Ayah)
+            .where(
+                Ayah.text_version_id == version.id,
+                (Ayah.plain_search_text.is_(None))
+                | (func.trim(Ayah.plain_search_text) == ""),
+            )
+        )
+        if blind:
+            issues.append(
+                f"{blind} آية بلا مفتاح بحث (plain_search_text) — "
+                "البحث سيعيد صفرًا صامتًا في هذا الإصدار"
+            )
 
         if require_full:
             if total != FULL_MUSHAF_AYAH_COUNT:

@@ -46,7 +46,7 @@ export default function Header() {
           <Link href="/" className="nav-link">
             البحث
           </Link>
-          <Link href="/mushaf/1" className="nav-link">
+          <Link href="/mushaf" className="nav-link">
             المصحف
           </Link>
           <Link href="/compare" className="nav-link">

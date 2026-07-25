@@ -204,6 +204,7 @@ python scripts/build-golden-cases.py
 - `docs/PHASE_D_MORPHOLOGY_AR.md` — خط الصرف متعدد المصادر وفصل البسملة والتحقق.
 - `docs/SECURITY_AR.md` — طبقات الأمن والحدود ودور قاعدة البيانات في الإنتاج.
 - `docs/DEPLOYMENT_AR.md` — النشر موقعًا وتطبيقًا للهاتف، وقائمة تحقق بعد النشر.
+- `docs/HOSTING_CHOICES_AR.md` — أين تُنشر: موازنة بالتكلفة والجهد، وخطوات VPS في ٧ أوامر.
 - `docs/ROADMAP_NEXT_AR.md` — ما الذي يوسّع المنصة، مرتبًا بالقيمة والكلفة.
 - `docs/PRERELEASE_REVIEW_AR.md` — المراجعة العدائية قبل النشر: ما وُجد وما أُصلح وما بقي.
 - `docs/REVIEW_REPORT_AR.md` — تقرير المراجعة الشاملة السابقة (98 ملاحظة).

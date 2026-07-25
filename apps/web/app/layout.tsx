@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import { Amiri, Noto_Naskh_Arabic, Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import AppShell from "./components/AppShell";
@@ -93,6 +94,11 @@ export default function RootLayout({
               النص القرآني لا يولَّد آليًا، ويُعرض من إصدار موثق ومراجع فقط.
             </p>
             <p>جميع النتائج الآلية تُوسم وتُفصل عن المعتمد.</p>
+            <nav className="footer-links" aria-label="روابط المنصة">
+              <Link href="/methodology">المنهج والمصادر</Link>
+              <Link href="/privacy">سياسة الخصوصية</Link>
+              <Link href="/terms">شروط الاستعمال</Link>
+            </nav>
           </div>
         </footer>
       </body>
