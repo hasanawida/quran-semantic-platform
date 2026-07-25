@@ -1,9 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ayahAnalysis, getMeta, type Meta } from "../lib/staticdata";
+
+// انقل من الملف القديم حرفيًا: النوع Segment/Word/AyahAnalysis،
+// وAGREEMENT_LABELS، وDECISION_LABELS، ودالة renderAyah كاملةً.
+// renderAyah هي حارس الخط الأحمر: تقطّع uthmani_text بمواضع الحروف
+// وما بين الكلمات يخرج كما هو — لا تُمسّ بحرف.
+
+// النوع مشتقّ من مخرَج القارئ لا مكتوبًا يدويًا: نسخة ثانية منه
+// تتعتّق بصمت حين يتغيّر شكل البيانات.
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -111,35 +119,47 @@ function renderAyah(
   return parts.length > 0 ? parts : text;
 }
 
+
 export default function AyahAnalysisPage() {
-  const params = useParams<{ surah: string; ayah: string }>();
-  const surah = Number(params.surah);
-  const ayah = Number(params.ayah);
+  const [ref, setRef] = useState<{ surah: number; ayah: number } | null>(null);
   const [data, setData] = useState<AyahAnalysis | null>(null);
+  const [meta, setMeta] = useState<Meta | null>(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
 
+  // المعاملان من العنوان لا من مسار مولَّد — فمسار واحد يخدم 6,236 آية
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const surah = Number(params.get("s"));
+    const ayah = Number(params.get("a"));
+    if (!Number.isInteger(surah) || !Number.isInteger(ayah) || surah < 1 || ayah < 1) {
+      setError("مرجع الآية ناقص أو غير صحيح — الصيغة: /ayah?s=2&a=255");
+      return;
+    }
+    setRef({ surah, ayah });
+  }, []);
+
+  useEffect(() => {
+    if (!ref) return;
     let cancelled = false;
     setData(null);
     setError("");
-    fetch(`${API_URL}/morphology/ayahs/${surah}/${ayah}`)
-      .then(async (response) => {
-        const payload = await response.json();
+    // تجزئة العنوان تنقل رقم الكلمة كما كانت #w{n} تفعل
+    const word = Number(window.location.hash.replace("#w", ""));
+    if (Number.isInteger(word) && word > 0) setSelected(word);
+    Promise.all([ayahAnalysis(ref.surah, ref.ayah), getMeta()])
+      .then(([payload, info]) => {
         if (cancelled) return;
-        if (!response.ok || !payload?.data) {
-          setError(payload?.error?.message ?? "تعذّر جلب التحليل.");
-          return;
-        }
-        setData(payload.data);
+        setData(payload);
+        setMeta(info);
       })
-      .catch(() => {
-        if (!cancelled) setError("تعذّر الاتصال بالخدمة الخلفية.");
+      .catch((err) => {
+        if (!cancelled) setError((err as Error).message);
       });
     return () => {
       cancelled = true;
     };
-  }, [surah, ayah]);
+  }, [ref]);
 
   return (
     <main id="main" className="container">
@@ -147,7 +167,7 @@ export default function AyahAnalysisPage() {
         <Link href="/">البحث بالجذر</Link>
         <span aria-hidden="true">/</span>
         <span>
-          التحليل الصرفي ({surah}:{ayah})
+          التحليل الصرفي {ref ? `(${ref.surah}:${ref.ayah})` : ""}
         </span>
       </nav>
 
@@ -227,7 +247,7 @@ export default function AyahAnalysisPage() {
                                 <td lang="ar" data-label="الجذر">
                                   {segment.root ? (
                                     <Link
-                                      href={`/root/${encodeURIComponent(
+                                      href={`/root?r=${encodeURIComponent(
                                         segment.root
                                       )}`}
                                     >
@@ -268,6 +288,19 @@ export default function AyahAnalysisPage() {
           </div>
         </>
       )}
+
+
+      {data && meta && (
+        <div className="status-box notice">
+          <p>
+            {data.notice} النص من إصدار <code>{meta.data_release}</code>،
+            حالته <strong>{meta.review_status}</strong>، ولقطة ثابتة بتاريخ{" "}
+            {meta.snapshot_at}. <Link href="/provenance">بيان الأصول</Link>
+          </p>
+        </div>
+      )}
     </main>
   );
 }
+
+// ثم: Remove-Item -Recurse -Force apps/web/app/ayah/[surah]

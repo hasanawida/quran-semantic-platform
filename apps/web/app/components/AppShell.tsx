@@ -26,8 +26,12 @@ export default function AppShell() {
       // القشرة قط. والأثر ليس بطء تحديث فحسب: صفحةٌ مخزَّنة قد تُظهر
       // حالة مراجعة إصدارٍ أُبطل. (رصده فحص التصميم في 2026-07-25.)
       const build = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+      // basePath لا يُطبَّق على هذا المسار: نصٌّ حرفي لا <Link>.
+      const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
       navigator.serviceWorker
-        .register(`/sw.js?v=${encodeURIComponent(build)}`)
+        .register(`${base}/sw.js?v=${encodeURIComponent(build)}`, {
+          scope: `${base}/`,
+        })
         .catch(() => {
           /* التسجيل ليس شرطًا لعمل الموقع */
         });

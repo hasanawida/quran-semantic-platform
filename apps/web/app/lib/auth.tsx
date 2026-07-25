@@ -49,6 +49,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshMe = useCallback(async () => {
+    // الموقع الثابت بلا مصادقة ولا خدمة: الطلب هنا يخطئ حتمًا
+    // ويؤخّر أول رسم على كل صفحة عامة.
+    if (process.env.NEXT_PUBLIC_QSP_STATIC === "1") {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     if (!getAccessToken()) {
       setUser(null);
       setLoading(false);

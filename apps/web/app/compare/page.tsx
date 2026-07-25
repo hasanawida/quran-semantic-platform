@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+import { compareRoots } from "../lib/staticdata";
 
 type RootStats = {
   display_root: string;
@@ -98,18 +96,15 @@ export default function ComparePage() {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(
-        `${API_URL}/roots/compare?roots=${encodeURIComponent(roots)}&limit=30`
-      );
-      const payload = await response.json();
-      if (!response.ok || !payload?.data) {
-        setError(payload?.error?.message ?? "تعذّرت المقارنة.");
+      const payload = await compareRoots(roots, 30);
+      if (!payload) {
+        setError("لم يُعثر على أي من هذه الجذور في هذه اللقطة.");
         setData(null);
         return;
       }
-      setData(payload.data);
-    } catch {
-      setError("تعذّر الاتصال بالخدمة الخلفية.");
+      setData(payload);
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -189,7 +184,7 @@ export default function ComparePage() {
                           {index + 1}
                         </span>{" "}
                         <Link
-                          href={`/root/${encodeURIComponent(root.display_root)}`}
+                          href={`/root?r=${encodeURIComponent(root.display_root)}`}
                         >
                           <bdi>{root.display_root}</bdi>
                         </Link>
@@ -237,7 +232,7 @@ export default function ComparePage() {
                       order={order}
                     />
                     <p className="ayah-actions">
-                      <Link href={`/ayah/${item.surah_number}/${item.ayah_number}`}>
+                      <Link href={`/ayah?s=${item.surah_number}&a=${item.ayah_number}`}>
                         التحليل الصرفي ←
                       </Link>
                       {" · "}

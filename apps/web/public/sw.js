@@ -1,45 +1,64 @@
-/* عامل الخدمة — تشغيل المنصة على الهاتف بلا اتصال دائم.
+/* عامل الخدمة — الموقع الثابت.
 
    قاعدتان تحكمان ما يُخزَّن:
 
-   1. **لا يُخزَّن ما يُكتب.** الطلبات غير GET وكل ما يتعلق بالمصادقة
-      لا تمر على المخزن إطلاقًا، فلا تُعاد استجابة صلاحية قديمة.
-   2. **الشبكة أولًا للبيانات.** النص والتحليل يُطلبان من الخادم أولًا،
-      والمخزن احتياط عند انقطاع الاتصال. الواجهة تُظهر شارة «بلا اتصال»
-      حتى لا يُظن المعروض هو الأحدث.
-*/
+   1. **البيانات مثبَّتة بالبناء.** كل ما تحت `data/v1/` وُلِّد وقت البناء
+      وبصمته في `manifest.json`، فلا يمكن أن يكون المخزَّن أقدم من
+      «الخادم». المخزن أولًا، والشبكة لـ`manifest.json` وحده — به يُعرف
+      أن لقطةً جديدة نُشرت.
+   2. **لا شيء يُكتب.** الموقع بلا مصادقة ولا كتابة، فحُذف فرع
+      `/api/v1/` و`isAuthRequest` وفحص ترويسة `authorization`: شيفرة
+      ميتة تُطمئن زورًا.
 
-// بصمة البناء تصل في عنوان تسجيل العامل نفسه: `/sw.js?v=<build>`.
-// (كان يُقرأ `self.__QSP_BUILD__` وهو غير معرَّف في المستودع كله، فتبقى
-//  النسخة "qsp-v1" أبدًا ولا يُبطَل المخزن عند نشر جديد — وقد يُعرض
-//  عندئذ حالةُ مراجعة إصدارٍ أُبطل. صُحّح في 2026-07-25.)
+   القاعدة تُشتق من موضع الملف نفسه، فتعمل على موقع المشروع
+   (`/quran-semantic-platform/`) وموقع المستخدم (`/`) بلا تهيئة. */
+
+const SCOPE = new URL("./", self.location.href);
+const BASE = SCOPE.pathname;
+
+// بصمة البناء تصل في عنوان التسجيل: `sw.js?v=<build>`.
+// إن لم تُمرَّر NEXT_PUBLIC_BUILD_ID في سير النشر بقيت "dev" فبقيت
+// النسخة qsp-dev أبدًا ولم يُبطَل مخزن القشرة قط عبر النشرات — وهو
+// العطب المصحَّح في 2026-07-25 بعينه. سير Pages يمرّرها من github.sha.
 const BUILD = new URL(self.location.href).searchParams.get("v") || "dev";
 const VERSION = `qsp-${BUILD}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const DATA_CACHE = `${VERSION}-data`;
 
 const SHELL_ASSETS = [
-  "/",
-  // صفحات القراءة الأساسية: بدونها يُدفع من يفتحها بلا اتصال إلى
-  // الصفحة الرئيسة، فيظن الرابط معطوبًا لا الشبكة منقطعة.
-  "/mushaf",
-  "/methodology",
-  "/privacy",
-  "/terms",
-  "/manifest.webmanifest",
-  "/icon.svg",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/apple-touch-icon.png",
-];
+  "",
+  "mushaf/",
+  "methodology/",
+  "privacy/",
+  "terms/",
+  "manifest.webmanifest",
+  "icon.svg",
+  "icon-192.png",
+  "icon-512.png",
+  "apple-touch-icon.png",
+  // بيانات القشرة: بدونها لا يعمل شيء بلا اتصال (2,536 بايتًا مضغوطة)
+  "data/v1/manifest.json",
+  "data/v1/meta.json",
+  "data/v1/surahs.json",
+  "data/v1/normspec.json",
+].map((path) => BASE + path);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(SHELL_CACHE)
-      .then((cache) => cache.addAll(SHELL_ASSETS))
-      .then(() => self.skipWaiting())
-      .catch(() => self.skipWaiting())
+    caches.open(SHELL_CACHE).then(async (cache) => {
+      // **لا `addAll`**: هي ذرّية، فأصل واحد مفقود يُفرغ المخزن كله
+      // صامتًا. هنا كل أصل على حدة، والناقص يُسجَّل ولا يُبطل الباقي.
+      const results = await Promise.allSettled(
+        SHELL_ASSETS.map((url) =>
+          cache.add(new Request(url, { cache: "reload" }))
+        )
+      );
+      const missing = SHELL_ASSETS.filter(
+        (_url, i) => results[i].status === "rejected"
+      );
+      if (missing.length) console.warn("[qsp] أصول قشرة لم تُخزَّن:", missing);
+      await self.skipWaiting();
+    })
   );
 });
 
@@ -50,7 +69,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => !key.startsWith(VERSION))
+            .filter((key) => key.startsWith("qsp-") && !key.startsWith(VERSION))
             .map((key) => caches.delete(key))
         )
       )
@@ -58,17 +77,20 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-function isAuthRequest(url) {
-  return url.pathname.includes("/auth/") || url.pathname.includes("/admin/");
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response && response.ok) cache.put(request, response.clone());
+  return response;
 }
 
 async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    if (response && response.ok) {
-      cache.put(request, response.clone());
-    }
+    if (response && response.ok) cache.put(request, response.clone());
     return response;
   } catch (error) {
     const cached = await cache.match(request);
@@ -94,33 +116,30 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (!url.pathname.startsWith(BASE)) return;
 
-  // المصادقة والإدارة: لا تخزين ولا اعتراض
-  if (isAuthRequest(url)) return;
+  // بيان اللقطة: الشبكة أولًا — به وحده يُعرف أن نشرةً جديدة صدرت
+  if (url.pathname === `${BASE}data/v1/manifest.json`) {
+    event.respondWith(networkFirst(request, DATA_CACHE));
+    return;
+  }
 
-  // أي طلب يحمل تفويضًا ردُّه خاص بحامل الرمز: لا يوضع في مخزن مشترك
-  // على القرص يبقى بعد الخروج ويُعرض لمستخدم آخر على الجهاز نفسه.
-  if (request.headers.get("authorization")) return;
+  // بقية البيانات: المخزن أولًا — مثبَّتة بالبناء وبصمتها في البيان
+  if (url.pathname.startsWith(`${BASE}data/v1/`)) {
+    event.respondWith(cacheFirst(request, DATA_CACHE));
+    return;
+  }
 
-  // تنقّل بين الصفحات: الشبكة أولًا، وقشرة التطبيق احتياطًا
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request).catch(async () => {
         const cache = await caches.open(SHELL_CACHE);
-        return (await cache.match(request)) || (await cache.match("/"));
+        return (await cache.match(request)) || (await cache.match(BASE));
       })
     );
     return;
   }
 
-  // بيانات المنصة (نص، جذور، تحليل، بيان أصول)
-  if (url.pathname.includes("/api/v1/")) {
-    event.respondWith(networkFirst(request, DATA_CACHE));
-    return;
-  }
-
-  // أصول ثابتة من نفس الأصل
-  if (url.origin === self.location.origin) {
-    event.respondWith(staleWhileRevalidate(request));
-  }
+  event.respondWith(staleWhileRevalidate(request));
 });

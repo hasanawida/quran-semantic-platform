@@ -484,7 +484,12 @@ export async function ayahAnalysis(surah: number, ayah: number) {
       surface_text: text.slice(token.char_start, token.char_end),
       char_start: token.char_start,
       char_end: token.char_end,
-      analyses_by_source: segments.length ? { [source]: segments } : {},
+      // التوسيع مقصود: `{ [source]: segments }` يُستنتج نوعًا ضيّقًا
+      // بمفتاح واحد حرفي، فلا يقبله المستهلك الذي يتوقّع خريطة مصادر.
+      // والمنصة مبنيّة على تعدّد المصادر ولو كان المعتمد اليوم واحدًا.
+      analyses_by_source: (segments.length
+        ? { [source]: segments }
+        : {}) as Record<string, typeof segments>,
       root_agreement: !segments.length
         ? ("no_analysis" as const)
         : !roots.size

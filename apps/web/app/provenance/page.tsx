@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+import { getProvenance } from "../lib/staticdata";
 
 type MorphologySource = {
   code: string;
@@ -60,16 +58,9 @@ export default function ProvenancePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/export/provenance`)
-      .then(async (response) => {
-        const payload = await response.json();
-        if (!response.ok || !payload?.data) {
-          setError(payload?.error?.message ?? "تعذّر جلب بيان الأصول.");
-          return;
-        }
-        setData(payload.data);
-      })
-      .catch(() => setError("تعذّر الاتصال بالخدمة الخلفية."));
+    getProvenance()
+      .then((payload) => setData(payload as Provenance))
+      .catch((err) => setError((err as Error).message));
   }, []);
 
   return (

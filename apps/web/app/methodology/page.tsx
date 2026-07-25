@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+import { getMethodology } from "../lib/staticdata";
 
 type Source = {
   key: string;
@@ -108,16 +106,9 @@ export default function MethodologyPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/methodology`)
-      .then(async (response) => {
-        const payload = await response.json();
-        if (!response.ok || !payload?.data) {
-          setError(payload?.error?.message ?? "تعذّر جلب بيان المنهج.");
-          return;
-        }
-        setData(payload.data);
-      })
-      .catch(() => setError("تعذّر الاتصال بالخدمة الخلفية."));
+    getMethodology()
+      .then((payload) => setData(payload as Payload))
+      .catch((err) => setError((err as Error).message));
   }, []);
 
   return (

@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+import { getLabels, searchMorphology } from "../lib/staticdata";
 
 type DimensionValue = { value: string; label: string };
 type Dimension = { key: string; title: string; values: DimensionValue[] };
@@ -47,42 +45,29 @@ export default function MorphologySearchPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_URL}/morphology/dimensions`)
-      .then(async (response) => {
-        const payload = await response.json();
-        if (payload?.data?.dimensions) setDimensions(payload.data.dimensions);
-      })
+    getLabels()
+      .then((labels) => setDimensions(labels.dimensions))
       .catch(() => setError("تعذّر جلب أبعاد البحث."));
   }, []);
 
   const search = useCallback(
     async (offset = 0) => {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.set(key, value);
-      });
-      if (root.trim()) params.set("root", root.trim());
-      if (![...params.keys()].length) {
+      const active = Object.fromEntries(
+        Object.entries(filters).filter(([, value]) => value)
+      ) as Record<string, string>;
+      if (!Object.keys(active).length && !root.trim()) {
         setError("حدّد بُعدًا واحدًا على الأقل أو اكتب جذرًا.");
         setResults(null);
         return;
       }
-      params.set("offset", String(offset));
-      params.set("limit", String(PAGE_SIZE));
 
       setBusy(true);
       setError("");
       try {
-        const response = await fetch(`${API_URL}/morphology/search?${params}`);
-        const payload = await response.json();
-        if (!response.ok || !payload?.data) {
-          setError(payload?.error?.message ?? "تعذّر تنفيذ البحث.");
-          setResults(null);
-          return;
-        }
-        setResults(payload.data);
-      } catch {
-        setError("تعذّر الاتصال بالخدمة الخلفية.");
+        setResults(await searchMorphology(active, root, offset, PAGE_SIZE));
+      } catch (err) {
+        setError((err as Error).message);
+        setResults(null);
       } finally {
         setBusy(false);
       }
@@ -212,7 +197,7 @@ export default function MorphologySearchPage() {
                       <>
                         {" "}
                         · الجذر{" "}
-                        <Link href={`/root/${encodeURIComponent(hit.root)}`}>
+                        <Link href={`/root?r=${encodeURIComponent(hit.root)}`}>
                           <bdi lang="ar">{hit.root}</bdi>
                         </Link>
                       </>
@@ -222,7 +207,7 @@ export default function MorphologySearchPage() {
                     <code dir="ltr">{hit.features}</code>
                   </p>
                   <p className="ayah-actions">
-                    <Link href={`/ayah/${hit.surah_number}/${hit.ayah_number}`}>
+                    <Link href={`/ayah?s=${hit.surah_number}&a=${hit.ayah_number}`}>
                       التحليل الكامل للآية ←
                     </Link>
                     {" · "}

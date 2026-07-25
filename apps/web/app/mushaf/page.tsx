@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
-
-type Surah = {
-  number: number;
-  arabic_name: string;
-  revelation_type: string;
-  ayah_count: number;
-};
+import {
+  getMeta,
+  listSurahs,
+  searchAyahs,
+  type Meta,
+  type Surah,
+} from "../lib/staticdata";
 
 type MatchWord = { word_number: number; char_start: number; char_end: number };
 
@@ -37,12 +37,6 @@ type SearchPayload = {
   scope_note: string;
 };
 
-type Meta = {
-  data_release: string;
-  review_status: string;
-  warning: string;
-};
-
 const STATUS_LABELS: Record<string, string> = {
   imported: "مستورد — غير معتمد",
   approved: "معتمد",
@@ -65,33 +59,6 @@ function toLatinDigits(value: string) {
 
 const REFERENCE = /^(\d{1,3})\s*[:،.\-/]\s*(\d{1,3})$/;
 const BARE_NUMBER = /^\d{1,3}$/;
-
-async function fetchJson<T>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(`${API_URL}${path}`, {
-      next: { revalidate: 300 },
-    });
-    if (!response.ok) return null;
-    const payload = await response.json();
-    return (payload?.data ?? null) as T | null;
-  } catch {
-    return null;
-  }
-}
-
-export async function generateMetadata(): Promise<Metadata> {
-  const meta = await fetchJson<Meta>("/meta");
-  const status = meta ? STATUS_LABELS[meta.review_status] ?? meta.review_status : "";
-  const description = meta
-    ? `فهرست سور المصحف مع البحث في أسماء السور وفي نص الآيات. إصدار النص: ${meta.data_release}. حالة البيانات: ${status}.`
-    : "فهرست سور المصحف مع البحث في أسماء السور وفي نص الآيات.";
-  return {
-    title: "فهرست المصحف",
-    description,
-    openGraph: { title: "فهرست المصحف", description },
-    alternates: { canonical: "/mushaf" },
-  };
-}
 
 /** يعرض نص الآية **كما ورد حرفيًا** ويضع علامة على الكلمات المطابقة.
  *
@@ -133,38 +100,80 @@ function MarkedAyah({ hit }: { hit: SearchHit }) {
   );
 }
 
-export default async function MushafIndexPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; offset?: string }>;
-}) {
-  const params = await searchParams;
-  const query = (params.q ?? "").trim();
-  const offset = Math.max(0, Number(params.offset ?? 0) || 0);
+export default function MushafIndexPage() {
+  const [query, setQuery] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [surahs, setSurahs] = useState<Surah[] | null>(null);
+  const [allSurahs, setAllSurahs] = useState<Surah[] | null>(null);
+  const [meta, setMeta] = useState<Meta | null>(null);
+  const [search, setSearch] =
+    useState<Awaited<ReturnType<typeof searchAyahs>> | null>(null);
+  const [error, setError] = useState("");
 
-  const latin = toLatinDigits(query);
+  const run = useCallback(async (raw: string, from: number) => {
+    setError("");
+    const text = raw.trim();
+    const latin = toLatinDigits(text);
+    const reference = REFERENCE.exec(latin);
+    const isBareNumber = BARE_NUMBER.test(latin);
+    // مرجع رقمي أو رقم سورة لا يُبحث به في نص الآيات — ضجيج لا نتيجة
+    const wantsTextSearch = text.length >= 2 && !reference && !isBareNumber;
+    try {
+      const [list, all, info] = await Promise.all([
+        listSurahs(text || undefined),
+        listSurahs(),
+        getMeta(),
+      ]);
+      setSurahs(list);
+      setAllSurahs(all);
+      setMeta(info);
+      setSearch(
+        wantsTextSearch ? await searchAyahs(text, from, PAGE_SIZE) : null
+      );
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }, []);
+
+  // الرابط العميق يعمل: /mushaf?q=…&offset=… يُقرأ من العنوان لا من الخادم
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initial = params.get("q") ?? "";
+    const from = Math.max(0, Number(params.get("offset") ?? 0) || 0);
+    setQuery(initial);
+    setOffset(from);
+    run(initial, from);
+  }, [run]);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const url = new URL(window.location.href);
+    if (query.trim()) url.searchParams.set("q", query.trim());
+    else url.searchParams.delete("q");
+    url.searchParams.delete("offset");
+    window.history.pushState(null, "", url);
+    setOffset(0);
+    run(query, 0);
+  }
+
+  function goto(next: number) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("offset", String(next));
+    window.history.pushState(null, "", url);
+    setOffset(next);
+    run(query, next);
+    window.scrollTo({ top: 0 });
+  }
+
+  const latin = toLatinDigits(query.trim());
   const reference = REFERENCE.exec(latin);
-  const isBareNumber = BARE_NUMBER.test(latin);
-  // مرجع رقمي أو رقم سورة لا يُبحث به في نص الآيات — يعطي ضجيجًا لا نتيجة
-  const wantsTextSearch = query.length >= 2 && !reference && !isBareNumber;
-
-  const [surahs, meta, search] = await Promise.all([
-    fetchJson<Surah[]>(
-      query ? `/surahs?q=${encodeURIComponent(query)}` : "/surahs"
-    ),
-    fetchJson<Meta>("/meta"),
-    wantsTextSearch
-      ? fetchJson<SearchPayload>(
-          `/search/ayahs?q=${encodeURIComponent(query)}` +
-            `&limit=${PAGE_SIZE}&offset=${offset}`
-        )
-      : Promise.resolve(null),
-  ]);
-
-  // القائمة الكاملة لازمة للتحقق من صحة المرجع (عدد آيات السورة)
-  const allSurahs = query ? await fetchJson<Surah[]>("/surahs") : surahs;
   const noActiveVersion = !allSurahs || allSurahs.length === 0;
+  const reviewLabel = meta
+    ? STATUS_LABELS[meta.review_status] ?? meta.review_status
+    : "";
 
+  // القفز بالمرجع (2:255) — يُتحقَّق من صحته بعدد آيات السورة **كما جاء
+  // من البيانات** لا بثابت مكتوب، فيوافق نظام العدّ المعلن لهذا الإصدار.
   let jump: { surah: Surah; ayah: number } | null = null;
   let jumpError = "";
   if (reference && allSurahs) {
@@ -180,10 +189,6 @@ export default async function MushafIndexPage({
       jump = { surah: target, ayah };
     }
   }
-
-  const reviewLabel = meta
-    ? STATUS_LABELS[meta.review_status] ?? meta.review_status
-    : "";
 
   return (
     <main id="main" className="container">
@@ -202,13 +207,14 @@ export default async function MushafIndexPage({
         فالحقل واحد يفهم الثلاثة.
       </p>
 
-      <form className="search" action="/mushaf" method="get">
+      <form className="search" onSubmit={submit}>
         <label htmlFor="mushaf-q">ابحث في السور والآيات</label>
         <div className="search-row">
           <input
             id="mushaf-q"
             name="q"
-            defaultValue={query}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
             autoComplete="off"
             maxLength={100}
           />

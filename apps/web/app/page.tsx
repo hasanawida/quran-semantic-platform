@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
-
-const REQUEST_TIMEOUT_MS = 15_000;
+import { rootOccurrences } from "./lib/staticdata";
 const PAGE_SIZE = 10;
 
 // تعريب حالات السجل القادمة من الخلفية
@@ -125,7 +122,6 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [state, setState] = useState<SearchState>({ kind: "idle" });
   const [quranSize, setQuranSize] = useState(1.75);
-  const abortRef = useRef<AbortController | null>(null);
   const lastQueryRef = useRef("");
 
   function applyQuranSize(next: number) {
@@ -145,39 +141,13 @@ export default function HomePage() {
     occurrences: Occurrence[];
     pagination: { total_ayahs: number };
   }> {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    try {
-      const response = await fetch(
-        `${API_URL}/roots/${encodeURIComponent(
-          rootQuery
-        )}/occurrences?limit=${PAGE_SIZE}&offset=${offset}`,
-        { signal: controller.signal }
-      );
-      let payload: {
-        data?: {
-          root: RootInfo;
-          occurrences: Occurrence[];
-          pagination: { total_ayahs: number };
-        };
-        error?: { message?: string };
-      } | null = null;
-      try {
-        payload = await response.json();
-      } catch {
-        payload = null;
-      }
-      if (!response.ok || !payload?.data) {
-        throw new Error(
-          payload?.error?.message ?? "تعذر إتمام البحث. حاول مرة أخرى."
-        );
-      }
-      return payload.data;
-    } finally {
-      clearTimeout(timeout);
+    // البيانات تُقرأ من لقطة ثابتة لا من خدمة: لا مهلة ولا إلغاء طلب.
+    // وتُخزَّن بعد أول قراءة، فالبحث الثاني بلا شبكة أصلًا.
+    const data = await rootOccurrences(rootQuery, offset, PAGE_SIZE);
+    if (!data) {
+      throw new Error("لم يُعثر على جذر بهذا الإدخال في هذه اللقطة.");
     }
+    return data;
   }
 
   const runSearch = useCallback(async (rootQuery: string) => {
@@ -305,7 +275,7 @@ export default function HomePage() {
                   {STATUS_LABELS[success.root.status] ?? success.root.status}
                 </span>
                 <Link
-                  href={`/root/${encodeURIComponent(lastQueryRef.current)}`}
+                  href={`/root?r=${encodeURIComponent(lastQueryRef.current)}`}
                   className="nav-link"
                 >
                   رابط ثابت لهذا الجذر ←
@@ -357,7 +327,7 @@ export default function HomePage() {
                   />
                   <p className="ayah-actions">
                     <Link
-                      href={`/ayah/${occ.surah_number}/${occ.ayah_number}`}
+                      href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
                     >
                       التحليل الصرفي كلمةً كلمة ←
                     </Link>
