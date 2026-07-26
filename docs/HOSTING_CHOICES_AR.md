@@ -94,7 +94,8 @@ docker compose -f docker-compose.prod.yml run --rm \
 
 # 5) تحصين سجل التدقيق (بعد الهجرات، لا قبلها)
 docker compose -f docker-compose.prod.yml exec -T postgres \
-  psql -U "$POSTGRES_OWNER" -d "$POSTGRES_DB" < ops/sql/audit-hardening.sql
+  psql -U "$POSTGRES_OWNER" -d "$POSTGRES_DB" \
+  -v app_role="$POSTGRES_APP_USER" < ops/sql/audit-hardening.sql
 
 # 6) البذر ثم خط المعالجة
 docker compose -f docker-compose.prod.yml run --rm api python -m app.cli seed

@@ -420,6 +420,15 @@ class ReviewService:
             raise ReviewError(
                 "SELF_ARBITRATION_FORBIDDEN", "لا يحسم الخلافَ رافعُه."
             )
+        # ولا يحسمه **صاحب المحلّ**. كان الشرط يستثني الرافع وحده، فمن
+        # كتب الادعاء وحمل دور التحكيم يرفع الوسم عن عمله بنفسه — وهو
+        # الاعتماد الذاتي عينه، وإن دخل من باب الخلاف لا باب الاعتماد.
+        owner = await self._target_owner(dispute.target_type, dispute.target_id)
+        if owner == arbiter.id:
+            raise ReviewError(
+                "SELF_ARBITRATION_FORBIDDEN",
+                "لا يحسم الخلافَ صاحبُ العمل المختلَف فيه.",
+            )
         if len(resolution.strip()) < 10:
             raise ReviewError("RESOLUTION_REQUIRED", "قرار الحسم يجب أن يكون معللًا.")
 
@@ -573,6 +582,16 @@ class ReviewService:
         if correction.proposed_by == approver.id:
             raise ReviewError(
                 "SELF_REVIEW_FORBIDDEN", "لا يعتمد التصحيحَ مقترحُه."
+            )
+        # ولا يعتمده **صاحب المحلّ المصحَّح**. كان الشرط يستثني المقترح
+        # وحده، فلو اقترح غيري تصحيحًا على ادعائي، اعتمدتُه أنا بنفسي —
+        # فأحكم على تصحيح عملي. والتصحيح يُبطل الاعتماد ويعيد إلى
+        # المراجعة (apply_correction)، فالباب يمسّ حالة العمل لا حاشيته.
+        owner = await self._target_owner(correction.target_type, correction.target_id)
+        if owner == approver.id:
+            raise ReviewError(
+                "SELF_REVIEW_FORBIDDEN",
+                "لا يعتمد التصحيحَ صاحبُ العمل المصحَّح.",
             )
         correction.status = CorrectionStatus.APPROVED
         correction.approved_by = approver.id

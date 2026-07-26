@@ -304,7 +304,71 @@ def test_author_cannot_dispute_their_own_work_and_raiser_cannot_arbitrate():
     assert data["resolved_by"]
 
 
+def test_owner_cannot_arbitrate_a_dispute_on_their_own_work():
+    """الثغرة التي كشفها تدقيق مواصفة «لا اعتماد ذاتي».
+
+    كان `resolve_dispute` يستثني **رافع** الخلاف وحده. فصاحبُ الادعاء إن
+    حمل دور التحكيم رفع وسم «مختلف فيه» عن عمله بنفسه — اعتمادٌ ذاتي
+    دخل من باب الخلاف لا من باب الاعتماد، ولم يكشفه اختبار."""
+    _, author = _make_user(
+        UserRole.RESEARCHER,
+        UserRole.LINGUISTIC_REVIEWER,
+        UserRole.ARBITRATION_COMMITTEE,
+    )
+    _, raiser = _make_user(UserRole.LINGUISTIC_REVIEWER, UserRole.QUALITY_MANAGER)
+    c = client()
+    claim_id = _approved_claim(c, author, "سجد")
+
+    dispute_id = c.post(
+        "/api/v1/review/disputes",
+        json={
+            "target_type": "claim",
+            "target_id": claim_id,
+            "reason": "الشاهد المعجمي لا يحتمل التعميم الوارد في الدعوى.",
+        },
+        headers=_auth(raiser),
+    ).json()["data"]["id"]
+
+    own = c.post(
+        f"/api/v1/review/disputes/{dispute_id}/resolve",
+        json={"resolution": "أحسم الخلاف على ادعائي أنا وأرفع الوسم عنه."},
+        headers=_auth(author),
+    )
+    assert own.status_code == 409
+    assert own.json()["error"]["code"] == "SELF_ARBITRATION_FORBIDDEN"
+
+
 # ---- التصحيحات ----------------------------------------------------------
+def test_owner_cannot_approve_a_correction_of_their_own_work():
+    """وأختها: `approve_correction` كان يستثني **مقترح** التصحيح وحده.
+
+    فلو اقترح غيري تصحيحًا على ادعائي اعتمدتُه أنا — وأنا صاحبه. والتصحيح
+    يُبطل الاعتماد ويعيد إلى المراجعة، فالباب يمسّ حال العمل لا حاشيته."""
+    _, author = _make_user(UserRole.RESEARCHER, UserRole.QUALITY_MANAGER)
+    _, proposer = _make_user(UserRole.LINGUISTIC_REVIEWER)
+    c = client()
+    claim_id = _approved_claim(c, author, "شكر")
+
+    correction_id = c.post(
+        "/api/v1/review/corrections",
+        json={
+            "target_type": "claim",
+            "target_id": claim_id,
+            "description": "العبارة تعمّم بلا شاهد، وتُقيَّد بموضعها في المعجم.",
+            "new_statement": "الجذر في هذا الموضع بمعنى مقيَّد بسياق الآية ومحدود بما دلّ عليه الدليل.",
+        },
+        headers=_auth(proposer),
+    ).json()["data"]["id"]
+
+    own = c.post(
+        f"/api/v1/review/corrections/{correction_id}/approve",
+        json={},
+        headers=_auth(author),
+    )
+    assert own.status_code == 409
+    assert own.json()["error"]["code"] == "SELF_REVIEW_FORBIDDEN"
+
+
 def test_correction_keeps_before_and_after_and_voids_prior_approval():
     _, author = _make_user(UserRole.RESEARCHER)
     _, proposer = _make_user(UserRole.LINGUISTIC_REVIEWER)

@@ -212,7 +212,8 @@ docker compose -f docker-compose.prod.yml exec -T postgres \
   -d "$POSTGRES_DB" < backups/daily/qsp-<الختم>.dump
 # 3) أعد تحصين سجل التدقيق (‎--clean يسقط الصلاحيات)
 docker compose -f docker-compose.prod.yml exec -T postgres \
-  psql -U "$POSTGRES_OWNER" -d "$POSTGRES_DB" < ops/sql/audit-hardening.sql
+  psql -U "$POSTGRES_OWNER" -d "$POSTGRES_DB" \
+  -v app_role="$POSTGRES_APP_USER" < ops/sql/audit-hardening.sql
 # 4) شغّل، ثم افحص المواضع المرجعية
 docker compose -f docker-compose.prod.yml start api web
 docker compose -f docker-compose.prod.yml run --rm api \
