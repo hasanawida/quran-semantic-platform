@@ -48,7 +48,10 @@ export default function Header() {
 
         <div className="nav-actions">
           <Link href="/" className="nav-link">
-            البحث
+            البحث بالجذر
+          </Link>
+          <Link href="/word" className="nav-link">
+            بحث الكلمة
           </Link>
           <Link href="/mushaf" className="nav-link">
             المصحف

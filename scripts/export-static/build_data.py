@@ -235,6 +235,99 @@ def main() -> None:
         )
         assert len(entries) == len(resolved[position])
 
+    # ---------- 6-ب) فهرس الكلمات: صورةٌ مطبَّعة ← مواضعها وتحليلها ----------
+    # **لماذا فهرسٌ مستقل ولا يكفي `norm.json`:** البحث في نص الآيات يجد
+    # الآياتِ التي فيها الكلمة، ولا يجمع للكلمة نفسها جذرَها ولمّتها وكلَّ
+    # مواضعها. وجمعُها وقت العرض يلزمه تحميل ملفّ صرفِ كل سورةٍ ورد فيها
+    # اللفظ — نحو ثلاثين ملفًّا للكلمة الشائعة. فيُحسب هنا مرةً واحدة.
+    #
+    # **والخط الأحمر قائم:** المفهرَس هو الصورة **المطبَّعة** (مفتاح بحث
+    # لا نصّ عرض)، ويُخزَّن مع كل موضعٍ فهرسُ الآية ورقمُ الكلمة — ونصُّ
+    # العرض يأتي من ملف السورة بمواضع الحروف كما في بقية الشاشات.
+    #
+    # ويُشرَّح بالحرف الأول ليكون تحميل البحث الواحد عشرات الكيلوبايتات
+    # لا ميغابايتًا ونصفًا.
+    # **ولا يُنسب تحليلٌ إلى كلمةٍ في آيةٍ لم يحاذِها المصدر.** ترقيمُ
+    # المدونة للكلمات يخالف تقطيعنا في أربع آيات، فرقمُ الكلمة يزيح
+    # فيها — ولو نُسب التحليل على علّاته لظهر «ٱللَّه» من جذر «سمع»
+    # و«مِن» من جذر «علم». والموضع نفسه صحيح (الكلمة هناك فعلًا)،
+    # فيبقى؛ ويسقط التحليل وحده ويُعلن سقوطُه.
+    source_words = {(s, a): c for s, a, c in morph["source_words_per_ayah"]}
+    linked = {
+        (s, a): source_words.get((s, a)) == len(tokenize_ayah(text))
+        for s, a, text in ayahs
+    }
+
+    seg_by_word: dict[tuple[int, int, int], list] = {}
+    for seg in segments:
+        seg_by_word.setdefault((seg[0], seg[1], seg[2]), []).append(seg)
+
+    shards: dict[str, dict] = {}
+    word_total = 0
+    unlinked_words = 0
+    for position, (surah_number, ayah_number, text) in enumerate(ayahs):
+        aligned_here = linked[(surah_number, ayah_number)]
+        for order, (_st, _en, word) in enumerate(tokenize_ayah(text), start=1):
+            form = normalize_arabic_search(word)
+            if not form:
+                continue
+            word_total += 1
+            shard = shards.setdefault(
+                form[0] if form[0].isalpha() else "_",
+                {"roots": [], "lemmas": [], "forms": {}},
+            )
+            entry = shard["forms"].setdefault(form, {"n": 0, "a": {}, "o": []})
+            entry["n"] += 1
+            entry["o"] += [position, order]
+
+            # الجذر واللمّة من المدونة بموضعهما، لا باستنتاج. وكلمةٌ لم
+            # يحاذِها المصدر تبقى بلا تحليل — يُعلن ولا يُخمَّن.
+            if not aligned_here:
+                unlinked_words += 1
+                continue
+            for seg in seg_by_word.get((surah_number, ayah_number, order), ()):
+                root_ar, lemma = seg[10], seg[8]
+                if not root_ar and not lemma:
+                    continue
+                for table, value in (("roots", root_ar), ("lemmas", lemma)):
+                    if value and value not in shard[table]:
+                        shard[table].append(value)
+                key = "{},{}".format(
+                    shard["roots"].index(root_ar) if root_ar else -1,
+                    shard["lemmas"].index(lemma) if lemma else -1,
+                )
+                entry["a"][key] = entry["a"].get(key, 0) + 1
+
+    assert word_total == 77433, word_total
+    assert sum(len(s["forms"]) for s in shards.values()) == 14691
+    # مقيسٌ لا مقدَّر: أربع آيات غير محاذية، وكلماتها بلا تحليل
+    assert sum(1 for v in linked.values() if not v) == 4
+    assert unlinked_words == 50, unlinked_words
+
+    # عقدٌ يُثبَت لا يُدَّعى: عدد المواضع = العدد المعلن، وكل موضعٍ يشير
+    # إلى آيةٍ موجودة وإلى كلمةٍ داخل حدودها.
+    for shard in shards.values():
+        for form, entry in shard["forms"].items():
+            assert len(entry["o"]) == entry["n"] * 2, form
+            for i in range(0, len(entry["o"]), 2):
+                at, order = entry["o"][i], entry["o"][i + 1]
+                assert 0 <= at < len(ayahs), form
+                assert 1 <= order <= len(tokenize_ayah(ayahs[at][2])), form
+
+    for key, shard in shards.items():
+        write(
+            f"words/{ord(key):04x}.json",
+            {
+                "roots": shard["roots"],
+                "lemmas": shard["lemmas"],
+                # صورة: [عدد، {«جذر,لمّة»: عدد}، [فهرس آية، رقم كلمة، …]]
+                "forms": {
+                    form: [e["n"], e["a"], e["o"]]
+                    for form, e in sorted(shard["forms"].items())
+                },
+            },
+        )
+
     # ---------- 7) محاذاة المصدر بالنص (is_linked_to_token) ----------
     source_words = {(s, a): c for s, a, c in morph["source_words_per_ayah"]}
     aligned = [

@@ -600,3 +600,114 @@ export async function searchMorphology(
       `حرفيًا كما وردت. لقطة ثابتة بتاريخ ${meta.snapshot_at}.`,
   };
 }
+
+// ---------- بحث الكلمة بنفسها ----------
+/** شريحة فهرس الكلمات: `words/<حرف بالست عشري>.json`. */
+type WordShard = {
+  roots: string[];
+  lemmas: string[];
+  /** الصورة → [عدد، {«فهرس جذر,فهرس لمّة»: عدد}، [فهرس آية، رقم كلمة، …]] */
+  forms: Record<string, [number, Record<string, number>, number[]]>;
+};
+
+/**
+ * كلمةٌ بعينها: جذرها ولمّتها وكلّ مواضعها.
+ *
+ * **الفرق عن `searchAyahs`:** ذاك يجد الآياتِ التي فيها اللفظ، وهذا يجمع
+ * للّفظ نفسه تحليلَه وعددَه — وهو ما لا يُستخرج من `norm.json` وحده.
+ *
+ * **والخط الأحمر:** المفتاح مطبَّع، ونصُّ كل موضعٍ يأتي من ملف السورة
+ * حرفيًا ثم يُقصّ بمواضع الحروف — لا يُعاد تركيبه من الكلمات.
+ */
+export async function lookupWord(query: string, offset = 0, limit = 20) {
+  const [spec, meta] = await Promise.all([getNormalizer(), getMeta()]);
+  const form = spec.search(query.trim());
+  if (!form) return null;
+
+  const first = form[0];
+  const shardKey = /\p{L}/u.test(first)
+    ? first.codePointAt(0)!.toString(16).padStart(4, "0")
+    : "_";
+  let shard: WordShard;
+  try {
+    shard = await loadJson<WordShard>(`words/${shardKey}.json`);
+  } catch {
+    return null;
+  }
+  // طبقتان كما في `searchAyahs`: الصورة الصارمة أولًا، ثم مفتاح الهيكل.
+  // ولولا الثانية لأعطت «العالمين» صفرًا: رسمها في المصحف ٱلْعَٰلَمِينَ
+  // بألفٍ خنجرية، فصورتها المفهرسة «العلمين» — ويجمعهما الهيكل وحده.
+  // والمطابقة داخل الشريحة نفسها لأن التشريح على الحرف الأول **المطبَّع**
+  // لا على الهيكل، فلا يهاجر اللفظ إلى شريحةٍ أخرى.
+  let matched = form;
+  let layer: "exact" | "skeleton" = "exact";
+  let entry = shard.forms[form];
+  const skeletonKey = spec.skeleton(query.trim());
+  if (!entry && skeletonKey.length >= 3) {
+    for (const candidate of Object.keys(shard.forms)) {
+      if (spec.skeleton(candidate) !== skeletonKey) continue;
+      matched = candidate;
+      layer = "skeleton";
+      entry = shard.forms[candidate];
+      break;
+    }
+  }
+  if (!entry) {
+    // لا تخمين: تُعرض صورٌ تبدأ بالمكتوب ليصحّح المستعمل بنفسه
+    const near = Object.keys(shard.forms)
+      .filter((f) => f.startsWith(form) || form.startsWith(f))
+      .sort((a, b) => shard.forms[b][0] - shard.forms[a][0])
+      .slice(0, 8);
+    return { form, found: false as const, near, meta };
+  }
+
+  const [count, analyses, flat] = entry;
+  const positions: [number, number][] = [];
+  for (let i = 0; i < flat.length; i += 2) positions.push([flat[i], flat[i + 1]]);
+
+  const page = positions.slice(offset, offset + limit);
+  const occurrences = await Promise.all(
+    page.map(async ([position, order]) => {
+      const at = await fromIndex(position);
+      const text = await ayahText(position);
+      const tokens = spec.tokenize(text);
+      const token = tokens[order - 1];
+      return {
+        ...at,
+        uthmani_text: text,
+        word_number: order,
+        // مواضع الحروف — القصّ لا إعادة الكتابة
+        char_start: token ? token.char_start : null,
+        char_end: token ? token.char_end : null,
+      };
+    })
+  );
+
+  // التحليلات مرتّبة بالأكثر ورودًا. و«−1» يعني أن المصدر لم يعطِ القيمة.
+  const readings = Object.entries(analyses)
+    .map(([pair, n]) => {
+      const [r, l] = pair.split(",").map(Number);
+      return {
+        root: r >= 0 ? shard.roots[r] : null,
+        lemma: l >= 0 ? shard.lemmas[l] : null,
+        count: n,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    form: matched,
+    typed: form,
+    layer,
+    found: true as const,
+    query: query.trim(),
+    count,
+    // ما حُلِّل فعلًا قد يقلّ عن العدد: كلمات الآيات غير المحاذية تبقى
+    // بلا تحليل عمدًا. والفرق يُعرض ولا يُطمس.
+    analysed: readings.reduce((sum, reading) => sum + reading.count, 0),
+    readings,
+    occurrences,
+    pagination: { total: positions.length, offset, limit },
+    meta,
+  };
+}

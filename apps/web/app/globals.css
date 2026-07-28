@@ -1776,3 +1776,74 @@ mark[data-root]::after {
   text-align: center;
   text-wrap: pretty;
 }
+
+/* ---------- صفحة بحث الكلمة ---------- */
+.word-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-block: var(--space-5);
+  padding: var(--space-4);
+}
+.word-summary > h2 {
+  font-size: var(--text-2xl);
+  margin: 0 0 var(--space-3);
+}
+.word-summary > h3 {
+  font-size: var(--text-base);
+  margin-block: var(--space-4) var(--space-2);
+}
+.readings {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.readings > li {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.notice-inline {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-block: var(--space-3) 0;
+}
+.occurrences {
+  display: grid;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.occurrences > li {
+  border-inline-start: 3px solid var(--color-border);
+  padding-inline-start: var(--space-3);
+}
+.occurrences .ref {
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-2);
+}
+/* زرٌّ يبدو رابطًا: تصحيحُ الكتابة فعلٌ في الصفحة لا انتقالٌ إلى غيرها */
+.linklike {
+  background: none;
+  border: 0;
+  color: var(--color-accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+.near {
+  margin-block: var(--space-2) 0;
+}
+.source-note {
+  border-block-start: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-block-start: var(--space-6);
+  padding-block-start: var(--space-4);
+}
