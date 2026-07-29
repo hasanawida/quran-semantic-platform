@@ -243,6 +243,28 @@ function WordSearch() {
               )}
               <p className="notice-inline">{lexicon.reason}</p>
 
+              {/* **الإحالة بدل النقل.** المتن عند صاحبه، والطبعة مسمّاة
+                  بمحقّقها وناشرها ليعرف القارئ أين يقرأ وبأيّ نسخة.
+                  والترتيب بوفاة المؤلف — زمنيّ لا تفضيليّ (ADR-013). */}
+              <h3 className="lex-sources-head">
+                اقرأ المادة عند — {lexicon.references.length} معاجم
+              </h3>
+              <ul className="lex-refs">
+                {lexicon.references.map((ref) => (
+                  <li key={ref.work}>
+                    <a href={ref.url} target="_blank" rel="noreferrer noopener">
+                      {ref.work}
+                    </a>
+                    <span className="ref-author">
+                      {ref.author} (ت{ref.died})
+                    </span>
+                    <span className="lex-licence">{ref.edition}</span>
+                    <span className="muted">{ref.why}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="notice-inline">{lexicon.references_note}</p>
+
               {/* **الفراغ يُشرَح مكشوفًا لا مطويًّا.** كان هذا السجلّ خلف
                   `<details>` — والقارئ يرى «غير مُدخَل» ولا يرى لماذا،
                   فيظنّه تقصيرًا. وعرضُ ما فُحص وسببِ ردّه هو الفرق بين

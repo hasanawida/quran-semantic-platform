@@ -1,0 +1,165 @@
+# طلبات الإذن — نصوصٌ جاهزة للإرسال
+
+> **الغرض:** المعاجم العربية كلها مسدودةٌ اليوم لسببٍ واحد: **لا إذن**.
+> وهذه الرسائل تُحوّل السدّ إلى انتظارٍ قصير. أرسِلها من بريدك، وسجّل
+> الجواب — أو عدمَه — في [`../audits/LEXICON_SOURCING.md`](../audits/LEXICON_SOURCING.md).
+>
+> **ولا يُدخَل متنٌ قبل جوابٍ مكتوب.** ووجودُ الطلب لا يقوم مقام الإذن.
+
+---
+
+## ١) OpenITI — الأوسع أثرًا، وأرخص خطوة
+
+**إلى:** `kitab@aku.edu`
+**الموضوع:** Licence clarification for OpenITI corpus reuse — Quranic research platform
+
+```text
+Dear OpenITI / KITAB team,
+
+I maintain a free, open-source Quranic root-research platform
+(https://github.com/hasanawida/quran-semantic-platform), published at no
+charge under AGPL-3.0. It currently ships only the Tanzil Quran text and
+the Quranic Arabic Corpus morphology, each with its licence and SHA-256
+recorded.
+
+I would like to display short lexical entries from four OpenITI texts,
+keyed by Arabic root:
+
+  0502RaghibIsbahani.Mufradat.JK001150-ara1
+  0395IbnFarisQazwini.MucjamMaqayis.JK008008-ara1
+  0276IbnQutaybaDinawari.GharibQuran.Shamela0003259-ara1
+  0756IbnYusufSaminHalabi.CumdatHuffaz.Sham19Y0017829-ara1
+
+Before doing anything, I want to be certain of the rights position, and
+your documentation notes it is a work in progress. Three questions:
+
+1. Under what licence, if any, are the text files in the OpenITI corpus
+   repositories released? The four repositories above (0525AH, 0400AH,
+   0300AH, 0775AH) carry no LICENSE file, and openiti.org states only
+   that "the corpus can be used free of charge, but users pledge to help
+   develop the corpus".
+
+2. The #META# headers of these files name modern critical editions and
+   publishers — e.g. المفردات: محمد سيد كيلاني / دار المعرفة;
+   مقاييس اللغة: عبد السلام هارون / دار الجيل 1999. Has OpenITI cleared
+   rights with those editors or publishers, or does its licence cover only
+   OpenITI's own encoding and compilation work?
+
+3. If the underlying edition rights are not cleared, would you advise
+   against downstream redistribution of the text, and is there a subset of
+   the corpus whose underlying editions are demonstrably out of copyright?
+
+I would rather display nothing than display something I have no right to.
+Any guidance is very welcome, and I am glad to contribute corrections back
+to the corpus either way.
+
+With thanks and respect for your work,
+حسن عويضة / Hasan Awida
+https://github.com/hasanawida/quran-semantic-platform
+```
+
+---
+
+## ٢) دار الجيل — مقاييس اللغة (تحقيق عبد السلام هارون)
+
+**الموضوع:** استئذانٌ في عرض مقتطفات من «معجم مقاييس اللغة» في منصةٍ بحثية مجانية
+
+```text
+حضرة الناشر المحترم، دار الجيل — بيروت
+
+السلام عليكم ورحمة الله وبركاته، وبعد:
+
+فأنا باحثٌ أُطوّر منصةً بحثية **مجانية ومفتوحة المصدر** لدراسة جذور ألفاظ
+القرآن الكريم، منشورة على:
+https://hasanawida.github.io/quran-semantic-platform/
+
+والمنصة اليوم لا تعرض معجمًا عربيًّا واحدًا، لأني ألزمتُ نفسي ألّا أُدخل
+نصًّا إلا بإذنٍ مكتوب من صاحب حقّه أو بطبعةٍ خارجة عن الحماية. وقد
+امتنعتُ فعلًا عن نسخ نصوصٍ متداولة على الشابكة لهذا السبب.
+
+وأرجو التكرّم بالإذن في:
+
+  عرض «الأصل المعنوي» للجذر من معجم مقاييس اللغة — بتحقيق الأستاذ
+  عبد السلام محمد هارون، نشر دار الجيل — في حدود سطرٍ أو سطرين لكل
+  جذر، منسوبًا إلى الكتاب والمحقق والناشر والطبعة والصفحة، مع رابطٍ
+  إلى الكتاب.
+
+وأتعهّد بما يلي:
+  • ذكر الكتاب والمحقق والناشر والطبعة ورقم الصفحة مع كل مقتطف.
+  • ألّا يُعرض المعجم كاملًا ولا يُتاح تنزيله.
+  • ألّا يُستعمل في أي غرضٍ تجاري، وألّا تحمل المنصة إعلانًا ولا اشتراكًا.
+  • حذف المادة فورًا متى طلبتم ذلك، بلا مراجعة.
+
+وإن كان الإذن مشروطًا بصيغةٍ معيّنة أو مقابلٍ ما، فأرجو إفادتي لأمتثل.
+
+وإن تعذّر، فأشكر لكم وقتكم، وأكتفي بالإحالة إلى الكتاب دون نقل شيء منه.
+
+وتقبّلوا وافر التقدير،
+حسن عويضة
+```
+
+---
+
+## ٣) دار القلم / الدار الشامية — المفردات (تحقيق صفوان الداودي)
+
+**الموضوع:** استئذانٌ في عرض مقتطفات من «المفردات في غريب القرآن»
+
+> النصّ نفسه في (٢) مع تبديل: «معجم مقاييس اللغة — بتحقيق عبد السلام
+> هارون، نشر دار الجيل» ← «المفردات في غريب القرآن للراغب الأصفهاني —
+> بتحقيق الأستاذ صفوان عدنان الداودي، نشر دار القلم والدار الشامية،
+> الطبعة الأولى ١٤١٢هـ».
+
+---
+
+## ٤) دار صادر — لسان العرب
+
+> النصّ نفسه مع: «لسان العرب لابن منظور — طبعة دار صادر، الثالثة ١٤١٤هـ».
+>
+> **ملاحظة:** لسان العرب ضخم، والأرجح أن يُكتفى منه بالإحالة. وأولوية
+> الطلب لمقاييس اللغة والمفردات لأنهما أنفع للمنصة وأصغر حجمًا.
+
+---
+
+## ٥) مجمع الملك فهد لطباعة المصحف الشريف
+
+**الموضوع:** إذنٌ في استعمال إصدار النشر الحاسوبي لمصحف المدينة
+
+> خطرٌ مفتوح منذ `RISK_REGISTER.md` R-03. نطاقات المجمع تعذّرت من شبكتي،
+> فأعِد المحاولة من شبكتك.
+
+```text
+حضرة مجمع الملك فهد لطباعة المصحف الشريف
+
+السلام عليكم ورحمة الله وبركاته، وبعد:
+
+فأنا باحثٌ أُطوّر منصةً بحثية مجانية مفتوحة المصدر لدراسة جذور ألفاظ
+القرآن الكريم. وتعرض المنصة اليوم نصّ المصحف من مشروع تنزيل، وأودّ
+الرجوع إلى إصداركم الرسمي.
+
+وأستأذن في أربعة أمورٍ محددة:
+  ١) إتاحة «إصدار النشر الحاسوبي» بيانات نصّيّة للاستعمال البحثي.
+  ٢) إعادة توزيع النصّ ضمن مشروعٍ مفتوح المصدر يُنشر مجانًا.
+  ٣) معالجة النصّ آليًّا واشتقاق فهارس بحثٍ منه (دون المساس بالنصّ نفسه).
+  ٤) حكم شحن خطّ KFGQPC ضمن حزمة الموقع.
+
+وأتعهّد بعدم تعديل النصّ، وبعرض بصمته الرقمية، وبذكر المجمع مصدرًا
+رسميًّا في كل شاشة.
+
+وتقبّلوا وافر التقدير،
+حسن عويضة
+```
+
+---
+
+## سجلّ الإرسال
+
+| # | الجهة | أُرسل في | الجواب | الحال |
+|---|---|---|---|---|
+| ١ | OpenITI | — | — | لم يُرسل |
+| ٢ | دار الجيل | — | — | لم يُرسل |
+| ٣ | دار القلم | — | — | لم يُرسل |
+| ٤ | دار صادر | — | — | لم يُرسل |
+| ٥ | مجمع الملك فهد | — | — | لم يُرسل |
+
+> **يُملأ هذا الجدول بتاريخ الإرسال ونصّ الجواب حرفيًّا.** وعدمُ الجواب
+> ليس إذنًا — يبقى المصدر مسدودًا.

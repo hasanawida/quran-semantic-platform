@@ -1913,3 +1913,27 @@ mark[data-root]::after {
 .lex-sources > li[data-status="ingested"] {
   border-inline-start-color: var(--color-accent);
 }
+
+/* ---------- الإحالة بدل النقل: المتن عند صاحبه ---------- */
+.lex-refs {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+.lex-refs > li {
+  border-inline-start: 3px solid var(--color-accent);
+  display: grid;
+  font-size: var(--text-sm);
+  gap: 0.15rem;
+  padding-inline-start: var(--space-3);
+}
+.lex-refs > li > a {
+  font-family: var(--font-ui-stack);
+  font-weight: 600;
+}
+.ref-author {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}

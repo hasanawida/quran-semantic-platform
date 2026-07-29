@@ -721,6 +721,16 @@ export type Lexicon = {
   reason: string;
   audit: string;
   sources: { name: string; url: string; licence: string; status: string; note: string }[];
+  /** إحالاتٌ لا متون: أفضل طبعةٍ لكل معجم، وطريقُ القارئ إليها. */
+  references: {
+    work: string;
+    author: string;
+    died: string;
+    edition: string;
+    why: string;
+    url: string;
+  }[];
+  references_note: string;
 };
 
 /**
