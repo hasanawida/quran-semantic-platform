@@ -229,16 +229,17 @@ function WordSearch() {
           {lexicon && data.readings.some((r) => r.root) && (
             <section className="lexicon-slot" aria-labelledby="lex-head">
               <h2 id="lex-head">المادة المعجمية</h2>
-              {data.readings
-                .filter((r) => r.root)
-                .map((r) => (
-                  <p key={r.root} className="lex-entry">
+              {/* بالجذر لا بالقراءة: لمّتان من جذرٍ واحد مادةٌ واحدة */}
+              {[...new Set(data.readings.map((r) => r.root).filter(Boolean))].map(
+                (root) => (
+                  <p key={root} className="lex-entry">
                     <span className="lex-locator">
-                      مادة <bdi>{r.root}</bdi>
+                      مادة <bdi>{root}</bdi>
                     </span>
                     <span className="lex-state">المتن غير مُدخَل</span>
                   </p>
-                ))}
+                )
+              )}
               <p className="notice-inline">{lexicon.reason}</p>
               <details>
                 <summary>
