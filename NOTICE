@@ -90,6 +90,44 @@ TERMS OF USE:
 الرخصة، وتُفهرس نسخة مشتقة للبحث لا تحلّ محلّ الأصل.
 
 
+### ٢‑ج) المعجم — An Arabic-English Lexicon لإدوارد وِلْيَم لِين
+
+- المؤلف: Edward William Lane (ت 1876)، وأتمّه Stanley Lane-Poole (ت 1931)
+- **الطبعة: London: Williams and Norgate, 1863** — مقروءة من
+  `<sourceDesc>` داخل الملف نفسه، لا من وصف أحد
+- الرقمنة: Perseus Digital Library, Tufts University
+- المصدر: <https://www.perseus.tufts.edu/hopper/opensource/downloads/texts/hopper-texts-Arabic.tar.gz>
+- بصمة الأرشيف SHA-256:
+  `091f578bc744748e05b40179206c6dda54e059b0becbde4d95a1d1066f08a741`
+  (١٥٬٥٠٦٬١٧١ بايتًا — ويُتحقَّق منهما في كل بناء)
+- الملف في المستودع: `apps/api/data/lane_bundle.json.gz`
+
+**شروط الإتاحة — منقولة حرفيًا من `<availability status="free">` في الملف:**
+
+> - You credit Perseus, as follows, whenever you use the document:
+>   *«Text provided by Perseus Digital Library, with funding from The U.S.
+>   Department of Education and The Max Planck Society.»*
+> - You leave this availability statement intact.
+> - You offer Perseus any modifications you make.
+
+**والنسبة منفَّذة:** تظهر العبارة المطلوبة حرفيًا في كل شاشة تعرض مادةً
+من لِين، وفي `GET /api/v1/export/provenance`.
+
+**وثلاثة حدود تُعلَن ولا تُخفى:**
+
+1. **التغطية جزئية:** ٣٦ ملفًا تشمل الحروف كلها، لكن مفاتيح لِين صيغٌ
+   مُستشهَد بها لا جذور، فما وُجد له مقابلٌ من جذور المصحف **١٢٩٦ من
+   ١٦٤٢** (٧٨٫٩٪). والباقي أكثره معتلُّ الآخر (قرأ، صلو، زكو).
+2. **التعريفات إنجليزية.** ولِين شاهدٌ ثانوي لا أصلٌ عربي، فلا يُبنى عليه
+   حكمٌ لغويّ وحده.
+3. **عربيّة المصدر بترميز Perseus اللاتيني، ولا تُفكّ.** ليس باكوولتر
+   قياسيًّا — لا `>` ولا `<` ولا `|` فيه، وفيه `^` و`=` غير موثَّقين. وفكُّها
+   الظنّي يولّد عربيةً لم يكتبها لِين، فتُعرض كما هي موسومةً.
+
+**والعمل نفسه ملكية عامة** بلا نزاع: آخر المؤلفَين توفي 1931 (حياة+70
+انقضت 2002)، وكل المجلدات نُشرت 1863–1893.
+
+
 ٣) القيد الذي يجب أن يُقال صراحةً
 -----------------------------------
 

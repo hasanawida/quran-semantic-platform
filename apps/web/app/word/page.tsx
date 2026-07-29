@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { getLexicon, lookupWord, type Lexicon } from "../lib/staticdata";
+import {
+  getLexicon,
+  laneEntries,
+  lookupWord,
+  type LaneEntry,
+  type Lexicon,
+} from "../lib/staticdata";
 
 type Result = Awaited<ReturnType<typeof lookupWord>>;
 
@@ -47,9 +53,29 @@ function WordSearch() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const [lane, setLane] = useState<Record<string, LaneEntry[]>>({});
+
   useEffect(() => {
     getLexicon().then(setLexicon).catch(() => setLexicon(null));
   }, []);
+
+  // مواد لِين لجذور النتيجة — تُجلب بعد ظهورها لا قبله
+  useEffect(() => {
+    if (!data?.found) return;
+    const roots = [...new Set(data.readings.map((r) => r.root).filter(Boolean))];
+    let live = true;
+    Promise.all(
+      roots.map(async (root) => [root!, await laneEntries(root!)] as const)
+    ).then((pairs) => {
+      if (!live) return;
+      const next: Record<string, LaneEntry[]> = {};
+      for (const [root, entries] of pairs) if (entries) next[root] = entries;
+      setLane(next);
+    });
+    return () => {
+      live = false;
+    };
+  }, [data]);
 
   const run = useCallback(async (text: string, from: number) => {
     if (!text.trim()) return;
@@ -231,16 +257,51 @@ function WordSearch() {
               <h2 id="lex-head">المادة المعجمية</h2>
               {/* بالجذر لا بالقراءة: لمّتان من جذرٍ واحد مادةٌ واحدة */}
               {[...new Set(data.readings.map((r) => r.root).filter(Boolean))].map(
-                (root) => (
-                  <p key={root} className="lex-entry">
-                    <span className="lex-locator">
-                      مادة <bdi>{root}</bdi>
-                    </span>
-                    <span className="lex-state">المتن غير مُدخَل</span>
-                  </p>
-                )
+                (root) => {
+                  const entries = lane[root!];
+                  return (
+                    <div key={root} className="lex-entry-block">
+                      <p className="lex-entry">
+                        <span className="lex-locator">
+                          مادة <bdi>{root}</bdi>
+                        </span>
+                        {entries?.length ? (
+                          <span className="lex-state has-text">
+                            لِين — {entries.length}{" "}
+                            {entries.length === 1 ? "مدخل" : "مداخل"}
+                          </span>
+                        ) : (
+                          <span className="lex-state">المتن غير مُدخَل</span>
+                        )}
+                      </p>
+                      {entries?.map((item) => (
+                        <article key={item.key} className="lane-entry">
+                          <p className="lane-head">
+                            <code className="translit">{item.key}</code>
+                            <span className="muted">
+                              طبعة لندن ١٨٦٣ — ص {item.page}
+                            </span>
+                          </p>
+                          {/* نصّ لِين كما هو. وعربيّته بترميز Perseus
+                              اللاتيني تُترك على حالها ولا تُفكّ. */}
+                          <p className="lane-text" lang="en" dir="ltr">
+                            {item.text}
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  );
+                }
               )}
               <p className="notice-inline">{lexicon.reason}</p>
+
+              {/* النسبة **شرطُ إتاحةٍ منصوص** في ملف المصدر، لا مجاملة:
+                  «You credit Perseus … whenever you use the document». */}
+              {Object.keys(lane).length > 0 && lexicon.lane && (
+                <p className="attribution" lang="en" dir="ltr">
+                  {lexicon.lane.availability.attribution_required}
+                </p>
+              )}
               <details>
                 <summary>
                   حال المعاجم المرشَّحة ({lexicon.sources.length})

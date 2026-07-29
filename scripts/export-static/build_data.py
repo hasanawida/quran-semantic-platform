@@ -183,29 +183,58 @@ def main() -> None:
     # جذرًا من مصدرٍ مرخَّصٍ لنا أصلًا، فلا مصدر جديد ولا سؤال حقوقيّ.
     # ولذلك لا يُكتب هنا سجلٌّ بـ١٦٤٢ صفًّا متطابقًا — يُكتب **السجلّ
     # والسياسة** وحدهما، وتُشتقّ المادة من الجذر في العرض.
+    # معجم لِين: مواد بمتونها وصفحاتها، مشرَّحةً بالحرف الأول كفهرس الكلمات
+    lane_path = DATA / "lane_bundle.json.gz"
+    lane_meta: dict | None = None
+    lane_roots: set[str] = set()
+    if lane_path.exists():
+        with gzip.open(lane_path, "rt", encoding="utf-8") as handle:
+            lane = json.load(handle)
+        lane_meta = lane["meta"]
+        lane_shards: dict[str, dict] = {}
+        for root_key, items in lane["entries"].items():
+            assert root_key in roots, f"مادة لجذر ليس عندنا: {root_key}"
+            lane_shards.setdefault(root_key[0], {})[root_key] = items
+            lane_roots.add(root_key)
+        for letter, payload in lane_shards.items():
+            write(f"lexicon/lane/{ord(letter):04x}.json", payload)
+        assert len(lane_roots) == lane_meta["limits"]["roots_matched"]
+
     write(
         "lexicon.json",
         {
-            "state": "no_text",
+            # الحال مقيسة لا معلَنة: مادةٌ بمتن حيث وُجد، وبلا متن حيث لم يوجد
+            "state": "partial" if lane_meta else "no_text",
             "scheme": "lexicon_entry",
             "entry_count": len(roots),
+            "with_text": sorted(lane_roots),
+            "lane": lane_meta,
             "reason": (
-                "المواد مفتوحةٌ بمواضعها، ومتونها غير مُدخَلة: لم يجتز أيُّ "
-                "معجمٍ عربيٍّ رقميّ شرطَ «الكتاب + الطبعة + الملف + الترخيص "
-                "+ البصمة». ويُعلَن ذلك ولا يُسدّ بمتنٍ مجهول الطبعة."
+                "معجم لِين مُدخَلٌ بطبعته وصفحاته لِما غطّاه من الجذور. وما "
+                "عداه بلا متن: لم يجتز أيُّ معجمٍ **عربيٍّ** رقميّ شرطَ "
+                "«الكتاب + الطبعة + الملف + الترخيص + البصمة»، ولا يُسدّ "
+                "الفراغ بمتنٍ مجهول الطبعة."
             ),
             "audit": "docs/audits/LISAN_AL_ARAB_SOURCING.md",
             # سجلّ المصادر بحقيقة حالها — مقروءًا من مواقع أصحابها
             "sources": [
                 {
-                    "name": "معجم لين (Lane) — رقمنة Perseus بصيغة TEI",
-                    "url": "https://www.perseus.tufts.edu/hopper/opensource/download",
-                    "licence": "CC BY-SA 3.0 — بلا قيدٍ غير تجاري",
-                    "status": "candidate",
+                    "name": "معجم لِين — رقمنة Perseus بصيغة TEI",
+                    "url": (
+                        "https://www.perseus.tufts.edu/hopper/opensource/"
+                        "downloads/texts/hopper-texts-Arabic.tar.gz"
+                    ),
+                    "licence": (
+                        "إتاحة حرّة بثلاثة شروط منصوصة داخل الملف نفسه — "
+                        "لا CC ولا GPL. وقد أُدرجت الشروط حرفيًا."
+                    ),
+                    "status": "ingested",
                     "note": (
-                        "الوحيد الحامل صفحاتٍ مشروعة (طبعة لندن 1863). "
-                        "وحدُّه: إنجليزيّ وشاهدٌ ثانوي، فلا يُبنى عليه حكمٌ "
-                        "لغويّ وحده."
+                        "الوحيد الذي اجتاز §10 كاملًا: الطبعة مسمّاة في "
+                        "الملف (London: Williams and Norgate, 1863) وصفحاتها "
+                        "حقيقية. وحدوده معلَنة: أربعة أحرف من ثمانية وعشرين، "
+                        "وتعريفاته إنجليزية، وعربيّته بترميز Perseus لا "
+                        "تُفكّ — فهو شاهدٌ ثانوي لا أصلٌ عربي."
                     ),
                 },
                 {

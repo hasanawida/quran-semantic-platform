@@ -714,9 +714,21 @@ export async function lookupWord(query: string, offset = 0, limit = 20) {
 
 // ---------- المواد المعجمية: مواضع بلا متون ----------
 export type Lexicon = {
-  state: "no_text";
+  state: "no_text" | "partial";
   scheme: string;
   entry_count: number;
+  with_text: string[];
+  /** بيان معجم لِين كما قُرئ من ملف المصدر — لا من وصفٍ خارجه. */
+  lane: {
+    work: string;
+    author: string;
+    edition: string;
+    digitised_by: string;
+    source_url: string;
+    archive_sha256: string;
+    availability: { attribution_required: string; conditions: string[] };
+    limits: Record<string, unknown>;
+  } | null;
   reason: string;
   audit: string;
   sources: { name: string; url: string; licence: string; status: string; note: string }[];
@@ -730,3 +742,30 @@ export type Lexicon = {
  * وهذا يُعرض ولا يُسدّ بمتنٍ مجهول الطبعة.
  */
 export const getLexicon = () => loadJson<Lexicon>("lexicon.json");
+
+export type LaneEntry = {
+  key: string;
+  page: number;
+  file: string;
+  text: string;
+  translit: string[];
+};
+
+/**
+ * مادة معجم لِين لجذرٍ بعينه — أو null إن لم يغطِّه.
+ *
+ * **لا يُفكّ ترميز المصدر:** عربيّة لِين مكتوبة بترميز Perseus اللاتيني،
+ * وفكُّها الظنّي يولّد نصًّا لم يكتبه. تُعرض كما هي موسومةً.
+ */
+export async function laneEntries(root: string): Promise<LaneEntry[] | null> {
+  if (!root) return null;
+  const shard = root.codePointAt(0)!.toString(16).padStart(4, "0");
+  try {
+    const data = await loadJson<Record<string, LaneEntry[]>>(
+      `lexicon/lane/${shard}.json`
+    );
+    return data[root] ?? null;
+  } catch {
+    return null;
+  }
+}
