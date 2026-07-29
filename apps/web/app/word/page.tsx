@@ -242,22 +242,37 @@ function WordSearch() {
                 )
               )}
               <p className="notice-inline">{lexicon.reason}</p>
-              <details>
-                <summary>
-                  حال المعاجم المرشَّحة ({lexicon.sources.length})
-                </summary>
-                <ul className="lex-sources">
-                  {lexicon.sources.map((source) => (
-                    <li key={source.name} data-status={source.status}>
-                      <a href={source.url} target="_blank" rel="noreferrer noopener">
-                        {source.name}
-                      </a>
-                      <span className="lex-licence">{source.licence}</span>
-                      <span className="muted">{source.note}</span>
-                    </li>
-                  ))}
-                </ul>
-              </details>
+
+              {/* **الفراغ يُشرَح مكشوفًا لا مطويًّا.** كان هذا السجلّ خلف
+                  `<details>` — والقارئ يرى «غير مُدخَل» ولا يرى لماذا،
+                  فيظنّه تقصيرًا. وعرضُ ما فُحص وسببِ ردّه هو الفرق بين
+                  نقصٍ مُعلَن ونقصٍ مسكوتٍ عنه. */}
+              <h3 className="lex-sources-head">
+                ما فُحص من المعاجم — {lexicon.sources.length} ولم يجتز منها
+                شيء
+              </h3>
+              <ul className="lex-sources">
+                {lexicon.sources.map((source) => (
+                  <li key={source.name} data-status={source.status}>
+                    <a href={source.url} target="_blank" rel="noreferrer noopener">
+                      {source.name}
+                    </a>
+                    <span className="lex-licence">{source.licence}</span>
+                    <span className="muted">{source.note}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="notice-inline">
+                التفصيل بالأدلّة في{" "}
+                <a
+                  href="https://github.com/hasanawida/quran-semantic-platform/blob/main/docs/audits/LEXICON_SOURCING.md"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  سجلّ فحص المعاجم
+                </a>
+                .
+              </p>
             </section>
           )}
 
