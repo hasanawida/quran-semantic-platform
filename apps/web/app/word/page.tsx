@@ -261,26 +261,31 @@ function WordSearch() {
                   const entries = lane[root!];
                   return (
                     <div key={root} className="lex-entry-block">
+                      {/* حالتان لا واحدة: المعنى **العربي** فارغٌ دائمًا
+                          اليوم، ولِين شاهدٌ إنجليزي بجانبه لا بديلٌ عنه.
+                          ودمجُهما في سطرٍ واحد يوهم أن المادة امتلأت. */}
                       <p className="lex-entry">
                         <span className="lex-locator">
                           مادة <bdi>{root}</bdi>
                         </span>
+                        <span className="lex-state">
+                          المعنى بالعربية — غير مُدخَل
+                        </span>
                         {entries?.length ? (
                           <span className="lex-state has-text">
-                            لِين — {entries.length}{" "}
+                            شاهد إنجليزي: لِين — {entries.length}{" "}
                             {entries.length === 1 ? "مدخل" : "مداخل"}
                           </span>
-                        ) : (
-                          <span className="lex-state">المتن غير مُدخَل</span>
-                        )}
+                        ) : null}
                       </p>
                       {entries?.map((item) => (
                         <article key={item.key} className="lane-entry">
                           <p className="lane-head">
                             <code className="translit">{item.key}</code>
                             <span className="muted">
-                              طبعة لندن ١٨٦٣ — ص {item.page}
+                              لِين، طبعة لندن ١٨٦٣ — ص {item.page}
                             </span>
+                            <span className="lang-tag">إنجليزي</span>
                           </p>
                           {/* نصّ لِين كما هو. وعربيّته بترميز Perseus
                               اللاتيني تُترك على حالها ولا تُفكّ. */}

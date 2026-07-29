@@ -1949,3 +1949,12 @@ mark[data-root]::after {
   margin-block: var(--space-3) 0;
   padding-block-start: var(--space-2);
 }
+/* وسم اللغة: القارئ يعرف قبل أن يقرأ أن الشاهد إنجليزي */
+.lang-tag {
+  background: var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-xs);
+  padding: 0.05rem 0.4rem;
+}
