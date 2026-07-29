@@ -1937,3 +1937,25 @@ mark[data-root]::after {
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }
+
+/* ---------- مادة مختار الصحاح: نصٌّ حرّ مراجَع، بنَسَبه الكامل ---------- */
+.sihah-entry {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-block: var(--space-2);
+  padding: var(--space-3);
+}
+.sihah-text {
+  font-size: var(--text-base);
+  line-height: 2;
+  margin: 0 0 var(--space-2);
+}
+.sihah-provenance {
+  border-block-start: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-xs);
+  margin: 0;
+  padding-block-start: var(--space-2);
+}

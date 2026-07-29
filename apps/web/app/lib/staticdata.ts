@@ -718,6 +718,17 @@ export type Lexicon = {
   scheme: string;
   entry_count: number;
   with_text: string[];
+  /** «مختار الصحاح» — طبعة حرّة تُنسخ وتُراجَع صفحةً صفحة (§24.6). */
+  sihah: {
+    work: string;
+    author: string;
+    edition: string;
+    public_domain: boolean;
+    statement: string;
+    scan: string;
+    pages: { transcribed: number; reviewed: number; pending: string[] };
+    entries_published: number;
+  } | null;
   reason: string;
   audit: string;
   sources: { name: string; url: string; licence: string; status: string; note: string }[];
@@ -743,3 +754,29 @@ export type Lexicon = {
 export const getLexicon = () => loadJson<Lexicon>("lexicon.json");
 
 
+
+export type SihahEntry = {
+  display: string;
+  text: string;
+  page: number;
+  flags: number;
+};
+
+/**
+ * مادة «مختار الصحاح» لجذرٍ بعينه — أو null إن لم تُنشر بعد.
+ *
+ * **لا يصل إلى هذه الملفات إلا ما روجع بشريًّا** (§24.6): البنّاء لا
+ * يُخرج صفحةً حالتها غير `reviewed`، فوجودُ المادة هنا شهادةُ مراجعة.
+ */
+export async function sihahEntry(root: string): Promise<SihahEntry | null> {
+  if (!root) return null;
+  const shard = root.codePointAt(0)!.toString(16).padStart(4, "0");
+  try {
+    const data = await loadJson<Record<string, SihahEntry>>(
+      `lexicon/sihah/${shard}.json`
+    );
+    return data[root] ?? null;
+  } catch {
+    return null;
+  }
+}

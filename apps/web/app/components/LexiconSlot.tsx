@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import { getLexicon, type Lexicon } from "../lib/staticdata";
+import {
+  getLexicon,
+  sihahEntry,
+  type Lexicon,
+  type SihahEntry,
+} from "../lib/staticdata";
 
 /**
  * المادة المعجمية: **موضعٌ مفتوحٌ ومتنٌ غير مُدخَل**.
@@ -17,26 +22,82 @@ import { getLexicon, type Lexicon } from "../lib/staticdata";
  */
 export function LexiconSlot({ roots }: { roots: string[] }) {
   const [lexicon, setLexicon] = useState<Lexicon | null>(null);
+  const [entries, setEntries] = useState<Record<string, SihahEntry>>({});
 
   useEffect(() => {
     getLexicon().then(setLexicon).catch(() => setLexicon(null));
   }, []);
 
   const unique = [...new Set(roots.filter(Boolean))];
+  const key = unique.join("|");
+
+  // مواد «مختار الصحاح» المنشورة — ولا يصل إلى ملفاتها إلا المراجَع (§24.6)
+  useEffect(() => {
+    if (!key) return;
+    let live = true;
+    Promise.all(
+      key.split("|").map(async (root) => [root, await sihahEntry(root)] as const)
+    ).then((pairs) => {
+      if (!live) return;
+      const next: Record<string, SihahEntry> = {};
+      for (const [root, entry] of pairs) if (entry) next[root] = entry;
+      setEntries(next);
+    });
+    return () => {
+      live = false;
+    };
+  }, [key]);
+
   if (!lexicon || unique.length === 0) return null;
+  const sihah = lexicon.sihah;
 
   return (
     <section className="lexicon-slot" aria-labelledby="lex-head">
       <h2 id="lex-head">المادة المعجمية</h2>
 
-      {unique.map((root) => (
-        <p key={root} className="lex-entry">
-          <span className="lex-locator">
-            مادة <bdi>{root}</bdi>
-          </span>
-          <span className="lex-state">المتن غير مُدخَل</span>
+      {unique.map((root) => {
+        const entry = entries[root];
+        return (
+          <div key={root} className="lex-entry-block">
+            <p className="lex-entry">
+              <span className="lex-locator">
+                مادة <bdi>{root}</bdi>
+              </span>
+              {entry ? (
+                <span className="lex-state has-text">
+                  مختار الصحاح — ص {entry.page} · مُراجَعة بشريًّا
+                </span>
+              ) : (
+                <span className="lex-state">المتن غير مُدخَل</span>
+              )}
+            </p>
+            {entry && sihah && (
+              <article className="sihah-entry">
+                {/* نصُّ الطبعة الحرّة كما نُسخ ورُوجع — بضبطه. */}
+                <p className="sihah-text" lang="ar">
+                  {entry.text}
+                </p>
+                <p className="sihah-provenance">
+                  {sihah.work} — {sihah.author} · {sihah.edition} · ص{" "}
+                  {entry.page} ·{" "}
+                  <a href={sihah.scan} target="_blank" rel="noreferrer noopener">
+                    المصوَّرة
+                  </a>{" "}
+                  · ملكية عامة — نُسخ آليًّا ورُوجعت صفحتُه بشريًّا
+                </p>
+              </article>
+            )}
+          </div>
+        );
+      })}
+
+      {sihah && sihah.pages.reviewed < sihah.pages.transcribed && (
+        <p className="notice-inline">
+          قيد النسخ: {sihah.pages.transcribed} صفحات من «مختار الصحاح»
+          منسوخةٌ آليًّا وتنتظر المراجعة البشرية قبل النشر (§24.6) —
+          المنشور منها اليوم {sihah.pages.reviewed}.
         </p>
-      ))}
+      )}
       <p className="notice-inline">{lexicon.reason}</p>
 
       {/* الإحالة بدل النقل: أفضل طبعةٍ مسمّاة بمحقّقها وناشرها، وطريقُ
