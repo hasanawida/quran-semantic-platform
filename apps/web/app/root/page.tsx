@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { LexiconSlot } from "../components/LexiconSlot";
 import { getMeta, rootOccurrences, type Meta } from "../lib/staticdata";
 
 const ARABIC_LETTER = /[ء-يٱ]/;
@@ -48,9 +49,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const PAGE_SIZE = 20;
-
-// انقل دالة AyahText من الملف القديم حرفيًا (تعرض النص كما هو وتميّز
-// كلمات الجذر بالتقسيم على الفراغ وعدّ ما حمل حرفًا عربيًا).
 
 type Payload = NonNullable<Awaited<ReturnType<typeof rootOccurrences>>>;
 
@@ -137,6 +135,10 @@ export default function RootPage() {
         </span>
       </header>
 
+      {/* المادة المعجمية أَولى بصفحة الجذر منها بصفحة الكلمة —
+          فالمعاجم العربية مرتَّبةٌ بالجذر لا باللفظ. */}
+      <LexiconSlot roots={[info.display_root]} />
+
       <ol className="ayah-list">
         {occurrences.map((occ) => (
           <li key={`${occ.surah_number}:${occ.ayah_number}`} className="ayah-item">
@@ -197,5 +199,3 @@ export default function RootPage() {
     </main>
   );
 }
-
-// ثم: Remove-Item -Recurse -Force 'apps/web/app/root/[root]'

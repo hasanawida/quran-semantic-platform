@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { getLexicon, lookupWord, type Lexicon } from "../lib/staticdata";
+import { LexiconSlot } from "../components/LexiconSlot";
+import { lookupWord } from "../lib/staticdata";
 
 type Result = Awaited<ReturnType<typeof lookupWord>>;
 
@@ -43,13 +44,8 @@ function WordSearch() {
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<Result>(null);
-  const [lexicon, setLexicon] = useState<Lexicon | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    getLexicon().then(setLexicon).catch(() => setLexicon(null));
-  }, []);
 
 
   const run = useCallback(async (text: string, from: number) => {
@@ -225,78 +221,9 @@ function WordSearch() {
             )}
           </section>
 
-          {/* المادة المعجمية: موضعٌ مفتوحٌ ومتنٌ غير مُدخَل. يُعرض
-              الفراغ بسببه ولا يُسدّ بمتنٍ مجهول الطبعة. */}
-          {lexicon && data.readings.some((r) => r.root) && (
-            <section className="lexicon-slot" aria-labelledby="lex-head">
-              <h2 id="lex-head">المادة المعجمية</h2>
-              {/* بالجذر لا بالقراءة: لمّتان من جذرٍ واحد مادةٌ واحدة */}
-              {[...new Set(data.readings.map((r) => r.root).filter(Boolean))].map(
-                (root) => (
-                  <p key={root} className="lex-entry">
-                    <span className="lex-locator">
-                      مادة <bdi>{root}</bdi>
-                    </span>
-                    <span className="lex-state">المتن غير مُدخَل</span>
-                  </p>
-                )
-              )}
-              <p className="notice-inline">{lexicon.reason}</p>
-
-              {/* **الإحالة بدل النقل.** المتن عند صاحبه، والطبعة مسمّاة
-                  بمحقّقها وناشرها ليعرف القارئ أين يقرأ وبأيّ نسخة.
-                  والترتيب بوفاة المؤلف — زمنيّ لا تفضيليّ (ADR-013). */}
-              <h3 className="lex-sources-head">
-                اقرأ المادة عند — {lexicon.references.length} معاجم
-              </h3>
-              <ul className="lex-refs">
-                {lexicon.references.map((ref) => (
-                  <li key={ref.work}>
-                    <a href={ref.url} target="_blank" rel="noreferrer noopener">
-                      {ref.work}
-                    </a>
-                    <span className="ref-author">
-                      {ref.author} (ت{ref.died})
-                    </span>
-                    <span className="lex-licence">{ref.edition}</span>
-                    <span className="muted">{ref.why}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="notice-inline">{lexicon.references_note}</p>
-
-              {/* **الفراغ يُشرَح مكشوفًا لا مطويًّا.** كان هذا السجلّ خلف
-                  `<details>` — والقارئ يرى «غير مُدخَل» ولا يرى لماذا،
-                  فيظنّه تقصيرًا. وعرضُ ما فُحص وسببِ ردّه هو الفرق بين
-                  نقصٍ مُعلَن ونقصٍ مسكوتٍ عنه. */}
-              <h3 className="lex-sources-head">
-                ما فُحص من المعاجم — {lexicon.sources.length} ولم يجتز منها
-                شيء
-              </h3>
-              <ul className="lex-sources">
-                {lexicon.sources.map((source) => (
-                  <li key={source.name} data-status={source.status}>
-                    <a href={source.url} target="_blank" rel="noreferrer noopener">
-                      {source.name}
-                    </a>
-                    <span className="lex-licence">{source.licence}</span>
-                    <span className="muted">{source.note}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="notice-inline">
-                التفصيل بالأدلّة في{" "}
-                <a
-                  href="https://github.com/hasanawida/quran-semantic-platform/blob/main/docs/audits/LEXICON_SOURCING.md"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  سجلّ فحص المعاجم
-                </a>
-                .
-              </p>
-            </section>
-          )}
+          <LexiconSlot
+            roots={data.readings.map((r) => r.root).filter(Boolean) as string[]}
+          />
 
           <section aria-labelledby="occ-head">
             <h2 id="occ-head">المواضع — {data.pagination.total} موضعًا</h2>
