@@ -1847,3 +1847,59 @@ mark[data-root]::after {
   margin-block-start: var(--space-6);
   padding-block-start: var(--space-4);
 }
+
+/* ---------- المادة المعجمية: موضعٌ مفتوح ومتنٌ غير مُدخَل ---------- */
+.lexicon-slot {
+  background: var(--color-notice-bg);
+  border: 1px solid var(--color-notice-border);
+  border-radius: var(--radius-md);
+  margin-block: var(--space-5);
+  padding: var(--space-4);
+}
+.lexicon-slot > h2 {
+  color: var(--color-notice-text);
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-3);
+}
+.lex-entry {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+}
+.lex-locator {
+  font-family: var(--font-ui-stack);
+  font-weight: 600;
+}
+/* الحال معروضةٌ لا مطموسة: الفراغ خبرٌ لا نقص عرض */
+.lex-state {
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-xs);
+  padding: 0.1rem 0.5rem;
+}
+.lex-sources {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+.lex-sources > li {
+  border-inline-start: 3px solid var(--color-border);
+  display: grid;
+  font-size: var(--text-sm);
+  gap: 0.15rem;
+  padding-inline-start: var(--space-3);
+}
+.lex-sources > li[data-status="blocked"] {
+  border-inline-start-color: var(--color-danger, var(--color-border-strong));
+}
+.lex-licence {
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-xs);
+}

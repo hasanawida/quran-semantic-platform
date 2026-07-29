@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { lookupWord } from "../lib/staticdata";
+import { getLexicon, lookupWord, type Lexicon } from "../lib/staticdata";
 
 type Result = Awaited<ReturnType<typeof lookupWord>>;
 
@@ -43,8 +43,13 @@ function WordSearch() {
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<Result>(null);
+  const [lexicon, setLexicon] = useState<Lexicon | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    getLexicon().then(setLexicon).catch(() => setLexicon(null));
+  }, []);
 
   const run = useCallback(async (text: string, from: number) => {
     if (!text.trim()) return;
@@ -218,6 +223,41 @@ function WordSearch() {
               </p>
             )}
           </section>
+
+          {/* المادة المعجمية: موضعٌ مفتوحٌ ومتنٌ غير مُدخَل. يُعرض
+              الفراغ بسببه ولا يُسدّ بمتنٍ مجهول الطبعة. */}
+          {lexicon && data.readings.some((r) => r.root) && (
+            <section className="lexicon-slot" aria-labelledby="lex-head">
+              <h2 id="lex-head">المادة المعجمية</h2>
+              {data.readings
+                .filter((r) => r.root)
+                .map((r) => (
+                  <p key={r.root} className="lex-entry">
+                    <span className="lex-locator">
+                      مادة <bdi>{r.root}</bdi>
+                    </span>
+                    <span className="lex-state">المتن غير مُدخَل</span>
+                  </p>
+                ))}
+              <p className="notice-inline">{lexicon.reason}</p>
+              <details>
+                <summary>
+                  حال المعاجم المرشَّحة ({lexicon.sources.length})
+                </summary>
+                <ul className="lex-sources">
+                  {lexicon.sources.map((source) => (
+                    <li key={source.name} data-status={source.status}>
+                      <a href={source.url} target="_blank" rel="noreferrer noopener">
+                        {source.name}
+                      </a>
+                      <span className="lex-licence">{source.licence}</span>
+                      <span className="muted">{source.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </section>
+          )}
 
           <section aria-labelledby="occ-head">
             <h2 id="occ-head">المواضع — {data.pagination.total} موضعًا</h2>

@@ -711,3 +711,22 @@ export async function lookupWord(query: string, offset = 0, limit = 20) {
     meta,
   };
 }
+
+// ---------- المواد المعجمية: مواضع بلا متون ----------
+export type Lexicon = {
+  state: "no_text";
+  scheme: string;
+  entry_count: number;
+  reason: string;
+  audit: string;
+  sources: { name: string; url: string; licence: string; status: string; note: string }[];
+};
+
+/**
+ * سجلّ المواد المعجمية وسياستها.
+ *
+ * المادة **مفتوحةٌ بموضعها** `lexicon_entry(root)` لكل جذرٍ قرآنيّ،
+ * **ومتنُها غير مُدخَل** — لأن لا معجمٍ عربيٍّ رقميّ اجتاز شرط §10.
+ * وهذا يُعرض ولا يُسدّ بمتنٍ مجهول الطبعة.
+ */
+export const getLexicon = () => loadJson<Lexicon>("lexicon.json");
