@@ -64,8 +64,19 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
                 مادة <bdi>{root}</bdi>
               </span>
               {entry ? (
-                <span className="lex-state has-text">
-                  مختار الصحاح — ص {entry.page} · مُراجَعة بشريًّا
+                <span
+                  className={
+                    entry.review === "human"
+                      ? "lex-state has-text"
+                      : "lex-state pending-review"
+                  }
+                >
+                  مختار الصحاح — ص {entry.page} ·{" "}
+                  {entry.review === "human"
+                    ? "مُراجَعة بشريًّا"
+                    : entry.review === "agent"
+                      ? "راجعها وكيلٌ آلي مستقل — قيد مراجعة المالك"
+                      : "نُسخت آليًّا — قيد المراجعة"}
                 </span>
               ) : (
                 <span className="lex-state">المتن غير مُدخَل</span>
@@ -83,7 +94,12 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
                   <a href={sihah.scan} target="_blank" rel="noreferrer noopener">
                     المصوَّرة
                   </a>{" "}
-                  · ملكية عامة — نُسخ آليًّا ورُوجعت صفحتُه بشريًّا
+                  · ملكية عامة —{" "}
+                  {entry.review === "human"
+                    ? "نُسخ آليًّا ورُوجعت صفحتُه بشريًّا"
+                    : entry.review === "agent"
+                      ? "نُسخ آليًّا وراجعه وكيلٌ مستقل، وينتظر مراجعة المالك"
+                      : "نُسخ آليًّا وينتظر المراجعة — يُصحَّح فور ورودها"}
                 </p>
               </article>
             )}
@@ -93,9 +109,10 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
 
       {sihah && sihah.pages.reviewed < sihah.pages.transcribed && (
         <p className="notice-inline">
-          قيد النسخ: {sihah.pages.transcribed} صفحات من «مختار الصحاح»
-          منسوخةٌ آليًّا وتنتظر المراجعة البشرية قبل النشر (§24.6) —
-          المنشور منها اليوم {sihah.pages.reviewed}.
+          من «مختار الصحاح»: {sihah.pages.transcribed} صفحات منسوخة،
+          راجع المالكُ {sihah.pages.reviewed} منها — والباقي منشورٌ
+          بوسم «قيد المراجعة» بقرار المالك (2026-07-30)، ويُصحَّح فور
+          مراجعته.
         </p>
       )}
       <p className="notice-inline">{lexicon.reason}</p>

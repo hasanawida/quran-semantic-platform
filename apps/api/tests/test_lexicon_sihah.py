@@ -1,9 +1,9 @@
-"""حارس «مختار الصحاح»: بوابة المراجعة والنَّسَب — لا يسقط منها شيء صامتًا.
+"""حارس «مختار الصحاح»: صدقُ الوسم والنَّسَب — لا يسقط منها شيء صامتًا.
 
-**لماذا:** المتن يُنسخ آليًّا من طبعةٍ حرّة، ودستور المنصة (§24.6) يمنع
-انتقال نصٍّ منسوخ آليًّا إلى الإنتاج قبل مراجعةٍ بشرية. فيُحرَس هنا أن
-**كل مادةٍ في الحزمة المنشورة تعود إلى صفحةٍ حالتُها `reviewed` فعلًا** —
-ولا يكشف ذلك مترجمٌ ولا بناء، لأن الحزمة تُبنى صالحةَ الشكل في الحالين.
+**السياسة (قرار المالك 2026-07-30):** يُنشر المنسوخ كلُّه، وكلُّ مادةٍ
+تحمل حالة مراجعتها الصادقة (بشرية | وكيل مستقل | قيد المراجعة). فالمحروس
+هنا لم يعد منعَ النشر بل **صدقَ الوسم**: مادةٌ موسومة «مُراجَعة بشريًّا»
+وصفحتُها ليست `reviewed` = كذبٌ على القارئ، ولا يكشفه مترجمٌ ولا بناء.
 """
 
 from __future__ import annotations
@@ -46,24 +46,23 @@ def bundle() -> dict:
         return json.load(handle)
 
 
-def test_no_entry_from_an_unreviewed_page(bundle):
-    """العقد الأهم — §24.6: كل مادةٍ منشورة صفحتُها مراجَعة.
+def test_review_label_is_truthful(bundle):
+    """العقد الأهم بعد قرار المالك (2026-07-30): صدقُ وسم كل مادة.
 
-    تُجمع صفحات المطبوع المراجَعة من ملفات النسخ نفسها، ويُتحقق أن كل
-    مادةٍ في الحزمة تقع صفحتُها فيها. حزمةٌ فيها مادة من صفحةٍ غير
-    مراجَعة = بوابةُ المراجعة مثقوبة."""
+    السياسة صارت: يُنشر المنسوخ كلُّه، وكلُّ مادةٍ تحمل حالة مراجعتها
+    الصادقة. فالمحروس لم يعد منعَ النشر بل **الوسم**: مادةٌ موسومة
+    `human` ورأسُها على صفحةٍ غير مراجَعة = كذبٌ على القارئ."""
     headers = _page_headers()
-    reviewed_pages = {
-        int(f["printed_page"]) for f in headers.values() if f.get("status") == "reviewed"
+    status_of = {
+        int(f["printed_page"]): f.get("status", "") for f in headers.values()
     }
-    leaked = [
-        f"{root}: ص{entry['page']}"
-        for root, entry in bundle["entries"].items()
-        if entry["page"] not in reviewed_pages
-    ]
-    assert not leaked, (
-        "موادُّ منشورة من صفحات غير مراجَعة (§24.6):\n  " + "\n  ".join(leaked)
-    )
+    lying = []
+    for root, entry in bundle["entries"].items():
+        assert entry.get("review") in {"human", "agent", "machine"}, root
+        head_status = status_of.get(entry["page"], "")
+        if entry["review"] == "human" and head_status != "reviewed":
+            lying.append(f"{root}: موسومة human ورأسها على صفحة {head_status!r}")
+    assert not lying, "وسومٌ كاذبة:\n  " + "\n  ".join(lying)
     # واتساق العدّ المعلن مع الواقع
     assert bundle["meta"]["pages"]["reviewed"] == sum(
         1 for f in headers.values() if f.get("status") == "reviewed"
@@ -79,7 +78,9 @@ def test_every_page_file_locks_to_the_free_scan():
     for name, fields in headers.items():
         assert fields.get("archive") == ARCHIVE_ID, name
         assert f"archive.org/download/{ARCHIVE_ID}" in fields.get("image", ""), name
-        assert fields.get("status") in {"machine_transcribed", "reviewed"}, (
+        assert fields.get("status") in {
+            "machine_transcribed", "agent_checked", "reviewed",
+        }, (
             f"{name}: حالة غير معروفة {fields.get('status')!r}"
         )
         # صفحة مراجَعة بلا اسم مراجع = مراجعة مُدَّعاة
@@ -93,7 +94,8 @@ def test_bundle_declares_the_edition_and_the_rule(bundle):
     assert meta["work"] == "مختار الصحاح"
     assert "١٩٢٠" in meta["edition"]
     assert meta["public_domain"] is True
-    assert "§24.6" in meta["statement"]
+    # البيان يذكر أن كل مادة تحمل حالة مراجعتها — لا ادّعاء مراجعةٍ شاملة
+    assert "حالة مراجعتها الصادقة" in meta["statement"]
     assert ARCHIVE_ID in meta["scan"]
     # بصمة لكل ملف صفحة — فتغييرُ نصٍّ بعد المراجعة يظهر
     for name in _page_headers():

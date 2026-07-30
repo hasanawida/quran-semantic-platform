@@ -760,6 +760,8 @@ export type SihahEntry = {
   text: string;
   page: number;
   flags: number;
+  /** حالة المراجعة الصادقة: بشرية | وكيل آلي مستقل | قيد المراجعة */
+  review: "human" | "agent" | "machine";
 };
 
 /**

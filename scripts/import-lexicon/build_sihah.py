@@ -7,11 +7,14 @@ https://archive.org/details/AAlexandrina-196404
 
 **القواعد المُنفَّذة هنا لا المُدَّعاة:**
 
-1. **§24.6 — لا نشرَ لغير المراجَع:** لا تدخل الحزمةَ إلا صفحاتٌ حالتها
-   `status: reviewed`. الصفحات المنسوخة غير المراجَعة تُعدّ ولا تُنشر.
+1. **سياسة النشر — بقرار المالك (2026-07-30):** «انشر كل شيء وأنا
+   أراجعها بعدها». فتدخل الحزمةَ كلُّ الصفحات المنسوخة، و**تحمل كل مادة
+   حالتها الصادقة**: `reviewed` إن رُوجعت كلُّ صفحاتها بشريًّا، وإلا
+   عُرضت موسومةً «قيد المراجعة» — لا يُدَّعى ما لم يقع. (وهذا عدولٌ
+   موثَّق عن حرفية §24.6 بقرار صاحب الدستور نفسه، والوسم الصادق بدله.)
 2. **المواد تمتدّ عبر الصفحات:** التقطيع يجري على السلاسل المتّصلة من
-   الصفحات المراجَعة، و**آخر مادة في كل سلسلة تُسقَط** لاحتمال بترها —
-   وتعود تلقائيًّا حين تُراجَع الصفحة التالية.
+   الصفحات المنسوخة، و**آخر مادة في كل سلسلة تُسقَط** لاحتمال بترها —
+   وتعود تلقائيًّا حين تُنسخ الصفحة التالية.
 3. **المطابقة بجذورنا:** رأس المادة (* ج م ع) يُطبَّع بـ
    `normalize_root_input` نفسها المستعملة في البذر، ويُنشر منها ما طابق
    فهرس جذور المصحف وحده.
@@ -99,6 +102,20 @@ def segment_run(run: list[dict]) -> list[dict]:
                 break
         return current
 
+    def pages_spanning(start: int, end: int) -> list[dict]:
+        """كلُّ الصفحات التي يمتدّ عليها نصُّ المادة — لحساب حالتها."""
+        spanned = []
+        for i, (offset, page) in enumerate(marks):
+            nxt = marks[i + 1][0] if i + 1 < len(marks) else len(joined)
+            if offset < end and nxt > start:
+                spanned.append(page)
+        return spanned
+
+    # حالة المادة = **أضعفُ** حالات صفحاتها: مراجعةُ نصفِ مادةٍ ليست
+    # مراجعةً لها. human > agent > machine.
+    RANK = {"reviewed": 2, "agent_checked": 1, "machine_transcribed": 0}
+    STATE = {2: "human", 1: "agent", 0: "machine"}
+
     entries: list[dict] = []
     heads = list(HEAD.finditer(joined))
     for i, match in enumerate(heads):
@@ -106,12 +123,16 @@ def segment_run(run: list[dict]) -> list[dict]:
         body = joined[match.end():end].strip()
         if len(body) < 20:
             continue
+        weakest = min(
+            RANK.get(p["status"], 0) for p in pages_spanning(match.start(), end)
+        )
         entries.append(
             {
                 "display": match.group(1),
                 "text": re.sub(r"\s+", " ", body),
                 "page": page_of(match.start())["printed_page"],
                 "flags": len(FLAG.findall(body)),
+                "review": STATE[weakest],
             }
         )
     # آخر مادة قد تكون مبتورة عند نهاية السلسلة — تُسقَط ولا تُنشَر ناقصة
@@ -126,8 +147,9 @@ def main() -> None:
     reviewed = [p for p in pages if p["status"] == "reviewed"]
     pending = [p for p in pages if p["status"] != "reviewed"]
 
+    # سياسة المالك (2026-07-30): يُنشر المنسوخ كلُّه، وكلُّ مادةٍ بوسمها
     entries_all: list[dict] = []
-    for run in contiguous_runs(reviewed):
+    for run in contiguous_runs(pages):
         entries_all += segment_run(run)
 
     our_roots: list[str] = json.loads(ROOTS.read_text(encoding="utf-8"))["roots"]
@@ -151,8 +173,9 @@ def main() -> None:
             "public_domain": True,
             "statement": (
                 "الطبعة ملكية عامة نصًّا وترقيمًا (طُبعت قبل ١٩٢٩). نُسخ "
-                "المتن آليًّا من صور المصوَّرة وروجعت كل صفحة منشورة "
-                "مراجعةً بشرية (§24.6). وما يُنتَج هنا يُعاد نشره حرًّا."
+                "المتن آليًّا من صور المصوَّرة، وكلُّ مادةٍ تحمل حالة "
+                "مراجعتها الصادقة: بشرية، أو وكيل آلي مستقل، أو قيد "
+                "المراجعة. وما يُنتَج هنا يُعاد نشره حرًّا."
             ),
             "scan": f"https://archive.org/details/{ARCHIVE_ID}",
             "review_status": "imported",
