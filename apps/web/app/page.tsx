@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
+import { LexiconSlot } from "./components/LexiconSlot";
 import { rootOccurrences } from "./lib/staticdata";
 const PAGE_SIZE = 10;
 
@@ -282,6 +283,10 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+
+            {/* المادة المعجمية هنا أيضًا: هذا مسار البحث الرئيس، وكانت
+                على /root و/word وحدهما — فمن بحث من الرئيسة لم يرَ متنًا. */}
+            <LexiconSlot roots={[success.root.display_root]} />
 
             <div className="list-toolbar">
               <span id="font-size-label">حجم النص القرآني</span>
