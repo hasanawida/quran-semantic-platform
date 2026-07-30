@@ -769,13 +769,16 @@ export type SihahEntry = {
  * يُخرج صفحةً حالتها غير `reviewed`، فوجودُ المادة هنا شهادةُ مراجعة.
  */
 export async function sihahEntry(root: string): Promise<SihahEntry | null> {
-  if (!root) return null;
-  const shard = root.codePointAt(0)!.toString(16).padStart(4, "0");
+  // صفحة الجذر تعرضه بمسافاته («ج م ع») والشرائح مفتاحها الصورة
+  // الموصولة («جمع») — فيُطبَّع المفتاح هنا ولا يُكلَّف المنادي بذلك.
+  const key = root.replace(/\s+/g, "");
+  if (!key) return null;
+  const shard = key.codePointAt(0)!.toString(16).padStart(4, "0");
   try {
     const data = await loadJson<Record<string, SihahEntry>>(
       `lexicon/sihah/${shard}.json`
     );
-    return data[root] ?? null;
+    return data[key] ?? null;
   } catch {
     return null;
   }
