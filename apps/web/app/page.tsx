@@ -196,14 +196,14 @@ export default function HomePage() {
   return (
     <main id="main">
       <section className="hero container">
-        <p className="eyebrow">بحث لغوي موثق وقابل للمراجعة</p>
-        <h1>منصة الاستقراء الدلالي لجذور ألفاظ القرآن الكريم</h1>
+        <p className="eyebrow">منصة مفتوحة للبحث القرآني الموثق</p>
+        <h1>تتبَّع جذرَ الكلمة عبر القرآن كلِّه</h1>
         <p className="lead">
-          اكتب جذرًا عربيًا فتظهر جميع الآيات التي ورد فيها، مع تمييز
-          الكلمات المشتقة منه — من نص موثق ببصمة رقمية.
+          ابحث عن الجذر، واستعرض مواضعه وصيغه ودلالاته المعجمية وتحليله
+          الصرفي — من نص موثق ببصمة رقمية ومصادر مسندة.
         </p>
 
-        <form className="search" onSubmit={search}>
+        <form className="search search-hero" onSubmit={search}>
           <label htmlFor="root-input">ابحث بجذر عربي</label>
           <div className="search-row">
             <input
@@ -219,6 +219,22 @@ export default function HomePage() {
               {state.kind === "loading" ? "جارٍ البحث…" : "بحث بالجذر"}
             </button>
           </div>
+          {/* امثلة تنقر فتبحث — اسرع تعريف بالمنصة من اي شرح */}
+          <p className="example-chips" aria-label="أمثلة جاهزة">
+            {["علم", "رحم", "كتب", "سأل", "غفر"].map((example) => (
+              <button
+                key={example}
+                type="button"
+                className="chip-btn"
+                onClick={() => {
+                  setQuery(example);
+                  void runSearch(example);
+                }}
+              >
+                {example}
+              </button>
+            ))}
+          </p>
           {/* الايضاح الوقائي لا يعرض الا حين يخفق البحث — حيث يحتاجه
               القارئ فعلا؛ وplaceholder يمثل الصيغ اصلا */}
           {state.kind === "error" && (
@@ -295,36 +311,67 @@ export default function HomePage() {
               </div>
             </div>
 
-            <ol className="ayah-list">
-              {success.occurrences.map((occ) => (
-                <li
-                  key={`${occ.surah_number}:${occ.ayah_number}`}
-                  className="ayah-item"
+            {/* تجميع بالسورة — راس واحد لكل سورة والايات تحته */}
+            {(() => {
+              const groups: {
+                surah: number;
+                name: string;
+                items: typeof success.occurrences;
+              }[] = [];
+              for (const occ of success.occurrences) {
+                const last = groups[groups.length - 1];
+                if (last && last.surah === occ.surah_number)
+                  last.items.push(occ);
+                else
+                  groups.push({
+                    surah: occ.surah_number,
+                    name: occ.surah_name,
+                    items: [occ],
+                  });
+              }
+              return groups.map((group) => (
+                <section
+                  key={group.surah}
+                  className="surah-group"
+                  aria-label={`سورة ${group.name}`}
                 >
-                  {/* سطر المرجع نفسه رابط التحليل — كان تحت كل اية
-                      سطر برابطين طويلين يتكرران عشرات المرات فيصير
-                      ثلث الصفحة روابط متطابقة */}
-                  <p className="ayah-ref">
-                    <Link
-                      href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
-                      title="التحليل الصرفي كلمة كلمة"
-                    >
-                      سورة {occ.surah_name} — الآية {occ.ayah_number}
-                    </Link>
-                    <Link
-                      className="ayah-context-link"
-                      href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
-                    >
-                      في سياق سورتها ←
-                    </Link>
-                  </p>
-                  <AyahText
-                    text={occ.uthmani_text}
-                    wordIndexes={occ.word_indexes}
-                  />
-                </li>
-              ))}
-            </ol>
+                  <h3 className="surah-group-head">
+                    سورة {group.name}
+                    <span className="muted">
+                      {" "}
+                      · {group.items.length} موضعًا هنا
+                    </span>
+                  </h3>
+                  <ol className="ayah-list grouped">
+                    {group.items.map((occ) => (
+                      <li
+                        key={`${occ.surah_number}:${occ.ayah_number}`}
+                        className="ayah-item"
+                      >
+                        <p className="ayah-ref">
+                          <Link
+                            href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
+                            title="التحليل الصرفي كلمة كلمة"
+                          >
+                            الآية {occ.ayah_number}
+                          </Link>
+                          <Link
+                            className="ayah-context-link"
+                            href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
+                          >
+                            في سياق سورتها ←
+                          </Link>
+                        </p>
+                        <AyahText
+                          text={occ.uthmani_text}
+                          wordIndexes={occ.word_indexes}
+                        />
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ));
+            })()}
 
             {success.occurrences.length < success.totalAyahs && (
               <button

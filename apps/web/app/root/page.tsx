@@ -135,29 +135,61 @@ export default function RootPage() {
         </span>
       </header>
 
-      <ol className="ayah-list">
-        {occurrences.map((occ) => (
-          <li key={`${occ.surah_number}:${occ.ayah_number}`} className="ayah-item">
-            {/* سطر المرجع نفسه رابط التحليل، ورابط السياق تابع هادئ —
-                كان تحت كل اية سطر برابطين يتكرران عشرين مرة */}
-            <p className="ayah-ref">
-              <Link
-                href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
-                title="التحليل الصرفي كلمة كلمة"
-              >
-                سورة {occ.surah_name} — الآية {occ.ayah_number}
-              </Link>
-              <Link
-                className="ayah-context-link"
-                href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
-              >
-                في سياق سورتها ←
-              </Link>
-            </p>
-            <AyahText text={occ.uthmani_text} wordIndexes={occ.word_indexes} />
-          </li>
-        ))}
-      </ol>
+      {/* تجميع بالسورة: راس واحد لكل سورة بدل تكرار اسمها فوق كل اية،
+          والايات تحته مفصولة بالبياض — صفحة تقرا لا قائمة بطاقات */}
+      {(() => {
+        const groups: { surah: number; name: string; items: typeof occurrences }[] =
+          [];
+        for (const occ of occurrences) {
+          const last = groups[groups.length - 1];
+          if (last && last.surah === occ.surah_number) last.items.push(occ);
+          else
+            groups.push({
+              surah: occ.surah_number,
+              name: occ.surah_name,
+              items: [occ],
+            });
+        }
+        return groups.map((group) => (
+          <section
+            key={group.surah}
+            className="surah-group"
+            aria-label={`سورة ${group.name}`}
+          >
+            <h2 className="surah-group-head">
+              سورة {group.name}
+              <span className="muted"> · {group.items.length} موضعًا هنا</span>
+            </h2>
+            <ol className="ayah-list grouped">
+              {group.items.map((occ) => (
+                <li
+                  key={`${occ.surah_number}:${occ.ayah_number}`}
+                  className="ayah-item"
+                >
+                  <p className="ayah-ref">
+                    <Link
+                      href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
+                      title="التحليل الصرفي كلمة كلمة"
+                    >
+                      الآية {occ.ayah_number}
+                    </Link>
+                    <Link
+                      className="ayah-context-link"
+                      href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
+                    >
+                      في سياق سورتها ←
+                    </Link>
+                  </p>
+                  <AyahText
+                    text={occ.uthmani_text}
+                    wordIndexes={occ.word_indexes}
+                  />
+                </li>
+              ))}
+            </ol>
+          </section>
+        ));
+      })()}
 
       {/* الترقيم كاملًا: 377 جذرًا يتجاوز العشرين وأقصاه 1,879 آية،
           والبتر عند 20 بلا ترقيم كان نقصًا مثبَّتًا. */}

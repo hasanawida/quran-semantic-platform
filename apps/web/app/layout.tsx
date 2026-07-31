@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Amiri, Noto_Naskh_Arabic, Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import AppShell from "./components/AppShell";
+import FirstVisitNotice from "./components/FirstVisitNotice";
 import Header from "./components/Header";
 import { AuthProvider } from "./lib/auth";
 
@@ -98,15 +99,19 @@ export default function RootLayout({
             data-website-id={UMAMI_ID}
           />
         )}
+        {/* اختيار الوضع المحفوظ يطبق قبل الرسم — فلا ومضة لون خاطئ */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var t=localStorage.getItem("qsp-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}',
+          }}
+        />
         <a href="#main" className="skip-link">
           الانتقال إلى المحتوى
         </a>
-        {/* شارة الحال — فوق كل صفحة، طلبتها مراجعة خارجية. سطر واحد
-            هادئ: الوسم فريضة والضجيج ليس منها، والتفصيل في المنهج */}
-        <div className="beta-bar" role="note">
-          نسخة بحثية تجريبية غير معتمدة — لا تُبنى عليها فتوى ولا تفسير
-          دون أهل الاختصاص. <Link href="/methodology">التفاصيل</Link>
-        </div>
+        {/* بيان الحال الكامل في الزيارة الاولى، والوسم الدائم شارة
+            الترويسة بتفصيلها — الوسم فريضة والضجيج ليس منها */}
+        <FirstVisitNotice />
         <AuthProvider>
           <AppShell />
           <Header />

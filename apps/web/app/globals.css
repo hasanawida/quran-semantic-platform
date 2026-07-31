@@ -19,27 +19,33 @@
 :root {
   color-scheme: light;
 
-  /* ---- اللون ---- */
-  --c-primary-050: #eef5f1;
-  --c-primary-100: #d7e8de;
-  --c-primary-500: #1d5c42;
-  --c-primary-700: #14432f;
+  /* ---- اللون — لوحة «مصحف بحثي حديث» (مراجعة تصميم 2026-08-01) ----
+     المعادلة: 70% خلفيات محايدة دافئة كالورق، اخضر زمردي عميق مقتصد،
+     وذهبي معتق لا يتجاوز اللمسات (تمييز، فاصل، شارة) ولا يكون زرا */
+  --c-primary-050: #e8f2ed;
+  --c-primary-100: #cfe3da;
+  --c-primary-500: #0d5c46;
+  --c-primary-700: #084636;
 
   --color-primary: var(--c-primary-500);
   --color-primary-strong: var(--c-primary-700);
   --color-primary-soft: var(--c-primary-050);
   --color-primary-line: var(--c-primary-100);
   --color-on-primary: #ffffff;
-  --color-accent: #8a6a2f;
+  /* الذهبي درجتان: زخرفي للخطوط والفواصل، وقرائي اغمق يجتاز AA للنص */
+  --color-accent: #b48a3c;
+  --color-accent-text: #8a6826;
 
-  --color-bg: #faf9f5;
-  --color-bg-sunken: #f2f1ea;
+  --color-bg: #f7f5ef;
+  --color-bg-sunken: #efece3;
   --color-surface: #ffffff;
-  --color-text: #1c2b24;
-  --color-text-muted: #52655a;
-  --color-text-faint: #5f7269;
-  --color-border: #dce2db;
-  --color-border-strong: #8c9a90;
+  /* خلفية النص القراني: اسمى بدرجة من خلفية الصفحة فيتقدم بلا صندقة */
+  --color-quran-bg: #fbf8ef;
+  --color-text: #17251f;
+  --color-text-muted: #5e6c65;
+  --color-text-faint: #66756d;
+  --color-border: #d9ded8;
+  --color-border-strong: #85948b;
   --color-ring: var(--c-primary-500);
 
   /* حالات — لكل حالة خلفية وحد ونص؛ لا يُعتمد اللون وحده أبدًا */
@@ -59,7 +65,7 @@
   --color-neutral-border: var(--color-border);
   --color-neutral-text: var(--color-text-muted);
 
-  --color-mark-bg: #fdf0c4;
+  --color-mark-bg: #fff1b8;
   --color-mark-text: #4a3a08;
 
   /* ---- الخطوط: ثلاثة أدوار ---- */
@@ -122,27 +128,33 @@
   --quran-font-size: 1.75rem;
 }
 
-/* الوضع الداكن: تُعاد الرموز نفسها فلا يحتاج أي مكوّن تعديلًا */
+/* الوضع الداكن: تُعاد الرموز نفسها فلا يحتاج أي مكوّن تعديلًا.
+   الكتلة مكررة مرتين قصدا (تفضيل النظام ما لم يُجبر الفاتح، ثم الاجبار
+   اليدوي data-theme="dark") — CSS الخام لا يعرف الضم، فان عدلت لونا
+   فعدله في الموضعين. الاختيار اليدوي يخزنه زر الترويسة في الجهاز. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --color-primary: #6bbd97;
-    --color-primary-strong: #8ad0af;
-    --color-primary-soft: #16241d;
+    --color-primary: #79c9a5;
+    --color-primary-strong: #93d6b6;
+    --color-primary-soft: #12211b;
     --color-primary-line: #24382d;
     --color-on-primary: #06120c;
-    --color-accent: #d9b871;
+    /* ذهبي مخفف ليلا — الساطع يزعج في القراءة الليلية */
+    --color-accent: #c9a95e;
+    --color-accent-text: #d6b56a;
 
-    --color-bg: #101713;
-    --color-bg-sunken: #0b110d;
-    --color-surface: #172019;
-    --color-text: #e6ece8;
-    --color-text-muted: #a7b7ad;
-    --color-text-faint: #93a49a;
-    --color-border: #2b3730;
+    --color-bg: #0b1210;
+    --color-bg-sunken: #080d0b;
+    --color-surface: #111b17;
+    --color-quran-bg: #141c18;
+    --color-text: #edf3ef;
+    --color-text-muted: #aab8b1;
+    --color-text-faint: #9fafa7;
+    --color-border: #2a3831;
     --color-border-strong: #6b7c72;
-    --color-ring: #6bbd97;
+    --color-ring: #79c9a5;
 
     --color-success-bg: #14251a;
     --color-success-border: #2f4f39;
@@ -156,13 +168,55 @@
     --color-notice-border: #4e422a;
     --color-notice-text: #ddc689;
 
-    --color-neutral-bg: #1a231d;
+    --color-neutral-bg: #17231e;
     --color-mark-bg: #4a3f16;
     --color-mark-text: #f6e7b4;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary: #79c9a5;
+  --color-primary-strong: #93d6b6;
+  --color-primary-soft: #12211b;
+  --color-primary-line: #24382d;
+  --color-on-primary: #06120c;
+  --color-accent: #c9a95e;
+  --color-accent-text: #d6b56a;
+
+  --color-bg: #0b1210;
+  --color-bg-sunken: #080d0b;
+  --color-surface: #111b17;
+  --color-quran-bg: #141c18;
+  --color-text: #edf3ef;
+  --color-text-muted: #aab8b1;
+  --color-text-faint: #9fafa7;
+  --color-border: #2a3831;
+  --color-border-strong: #6b7c72;
+  --color-ring: #79c9a5;
+
+  --color-success-bg: #14251a;
+  --color-success-border: #2f4f39;
+  --color-success-text: #9fd8b0;
+
+  --color-error-bg: #2a1715;
+  --color-error-border: #59302b;
+  --color-error-text: #edaaa2;
+
+  --color-notice-bg: #262013;
+  --color-notice-border: #4e422a;
+  --color-notice-text: #ddc689;
+
+  --color-neutral-bg: #17231e;
+  --color-mark-bg: #4a3f16;
+  --color-mark-text: #f6e7b4;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
 }
 
 /* ============================================================
@@ -719,7 +773,8 @@ mark {
   color: var(--color-mark-text);
   padding: 0 0.15em;
   border-radius: 4px;
-  box-shadow: inset 0 -0.16em 0 var(--color-accent);
+  /* خط سفلي ذهبي ثابت 2px — النسبي كان يتضخم في خط المصحف الكبير */
+  box-shadow: inset 0 -2px 0 var(--color-accent);
   font-weight: 700;
 }
 /* لا تثخين داخل النص القرآني: تثخين خط المصحف يشوه رسوم الكلمات
@@ -737,7 +792,10 @@ mark {
   top: 0;
   z-index: 20;
   border-block-end: var(--border-hairline);
-  background: var(--color-surface);
+  /* شبه شفافة مع تمويه: المحتوى يلمح خلفها عند التمرير بلا تشويش */
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .site-header nav {
@@ -762,6 +820,187 @@ mark {
 .brand svg {
   color: var(--color-primary);
   flex-shrink: 0;
+}
+
+/* الاسم سطران: العلامة قصيرة والوصف تحتها — افضل قراءة على الهاتف */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.brand-name {
+  font-size: var(--text-base);
+}
+.brand-sub {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/* شارة الحال التجريبية وتفصيلها المنبثق */
+.beta-badge {
+  position: relative;
+  font-family: var(--font-ui-stack);
+}
+.beta-badge > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--color-notice-text);
+  background: var(--color-notice-bg);
+  border: 1px solid var(--color-notice-border);
+  border-radius: var(--radius-pill);
+  padding: 0.15rem var(--space-3);
+  white-space: nowrap;
+}
+.beta-badge > summary::-webkit-details-marker {
+  display: none;
+}
+.beta-pop {
+  position: absolute;
+  inset-inline-start: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: min(21rem, 85vw);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: 1.8;
+}
+.beta-pop p {
+  margin: 0 0 var(--space-2);
+}
+
+.theme-toggle {
+  white-space: nowrap;
+}
+
+/* حقل البحث الرئيس اكبر واوضح — هو قلب الصفحة الاولى */
+.search-hero .search-row input {
+  min-height: 56px;
+  font-size: var(--text-lg);
+}
+.search-hero .search-row .primary {
+  min-height: 56px;
+}
+.example-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+.chip-btn {
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-sm);
+  color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-line);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-4);
+  min-block-size: 36px;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+.chip-btn:hover {
+  background: var(--color-primary-line);
+}
+
+.beta-dismiss {
+  margin-inline-start: var(--space-3);
+}
+
+/* مجموعات السور في نتائج الجذر: راس هادئ وايات تتنفس بالبياض */
+.surah-group {
+  margin-block: var(--space-6);
+}
+.surah-group-head {
+  font-size: var(--text-lg);
+  color: var(--color-primary-strong);
+  border-block-end: 1px solid var(--color-border);
+  padding-block-end: var(--space-2);
+}
+.ayah-list.grouped {
+  background: var(--color-quran-bg);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+}
+.ayah-list.grouped .ayah-item {
+  padding: var(--space-3) 0;
+}
+.ayah-list.grouped .ayah-item + .ayah-item {
+  border-block-start: 1px solid
+    color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+/* ظهور النتائج بتلاش خفيف — والحركة تحترم تفضيل تقليلها */
+@media (prefers-reduced-motion: no-preference) {
+  .results,
+  .surah-group {
+    animation: qsp-fade 160ms var(--ease);
+  }
+  @keyframes qsp-fade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* حالة نشطة واضحة للمسار الحالي */
+.nav-link[aria-current="page"] {
+  color: var(--color-primary-strong);
+  box-shadow: inset 0 -2px 0 var(--color-primary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+/* شريط الهاتف السفلي — يظهر في الشاشات الضيقة وحدها */
+.bottom-nav {
+  display: none;
+}
+@media (max-width: 720px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 25;
+    justify-content: space-around;
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-block-start: var(--border-hairline);
+    padding-block: var(--space-1);
+    padding-block-end: max(var(--space-1), env(safe-area-inset-bottom));
+  }
+  .bottom-nav a {
+    font-family: var(--font-ui-stack);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    padding: var(--space-2) var(--space-2);
+    min-block-size: var(--tap-target);
+    display: inline-flex;
+    align-items: center;
+  }
+  .bottom-nav a[aria-current="page"] {
+    color: var(--color-primary-strong);
+    box-shadow: inset 0 2px 0 var(--color-primary);
+  }
+  /* روابط الترويسة تختفي (الشريط السفلي بديلها) ويبقى زر الوضع والحساب */
+  .nav-actions .nav-link {
+    display: none;
+  }
+  body {
+    padding-block-end: 64px;
+  }
 }
 
 .nav-actions {
@@ -1529,7 +1768,7 @@ details > summary {
   list-style: none;
   margin: 0;
   padding: 0;
-  background: var(--color-surface);
+  background: var(--color-quran-bg);
   border: var(--border-hairline);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
@@ -1891,7 +2130,7 @@ mark[data-root]::after {
 .linklike {
   background: none;
   border: 0;
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   cursor: pointer;
   font: inherit;
   padding: 0;
