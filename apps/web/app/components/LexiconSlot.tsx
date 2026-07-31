@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -15,15 +16,15 @@ import {
 const OPENITI_ORDER = ["sihah_jawhari", "maqayis", "mufradat", "lisan"] as const;
 
 /**
- * المادة المعجمية: **موضعٌ مفتوحٌ ومتنٌ غير مُدخَل**.
+ * المادة المعجمية — قراءةٌ هادئة بقرار المالك (2026-08-01):
  *
- * **لماذا مكوّنٌ مشترك:** كان هذا القسم في صفحة الكلمة وحدها، وصفحةُ
- * الجذر — وهي أَولى به — بلا شيء. ونسخُه مرتين يجعل الحقيقتين تفترقان
- * عند أول تعديل. فمصدرٌ واحد لبيانه وعرضه.
+ * **كلُّ معجمٍ مطويٌّ افتراضًا والقارئ يفتح ما يشاء.** ظاهرُ الركن سطرُ
+ * عنوانٍ لكل كتاب (اسمه وموضع المادة وحالها)، ومتنُ المادة خلف طيّةٍ
+ * `<details>` — فلا يُصبّ على القارئ خمسةُ متونٍ دفعةً واحدة.
  *
- * **والفراغ يُشرَح مكشوفًا لا مطويًّا:** يرى القارئ «المتن غير مُدخَل»
- * **ولماذا** — وإلا حسبه تقصيرًا منّا. وعرضُ ما فُحص وسببِ ردّه هو الفرق
- * بين نقصٍ مُعلَن ونقصٍ مسكوتٍ عنه.
+ * **وسِجِلّات الإسناد الطويلة لها صفحتها:** قوائم «اقرأ المادة عند» وما
+ * فُحص من المصادر وبياناتُ الطبعات انتقلت إلى `/lexicon-sources` — يبلغها
+ * من أرادها من رابطٍ واحد، ولا تُزاحم من جاء يقرأ.
  */
 export function LexiconSlot({ roots }: { roots: string[] }) {
   const [lexicon, setLexicon] = useState<Lexicon | null>(null);
@@ -37,7 +38,7 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
   const unique = [...new Set(roots.filter(Boolean))];
   const key = unique.join("|");
 
-  // مواد «مختار الصحاح» المنشورة — ولا يصل إلى ملفاتها إلا المراجَع (§24.6)
+  // مواد «مختار الصحاح» المنسوخة بصريًّا عن طبعة ١٩٢٠ الحرة
   useEffect(() => {
     if (!key) return;
     let live = true;
@@ -54,7 +55,7 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
     };
   }, [key]);
 
-  // متون الكتب الثلاثة (§٢٠): متنٌ كلاسيكي مستورد، مسندٌ لا مُراجَع
+  // متون الكتب الأربعة (§٢٠): متنٌ كلاسيكي مستورد، مسندٌ لا مُراجَع
   useEffect(() => {
     if (!key) return;
     let live = true;
@@ -82,159 +83,117 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
       {unique.map((root) => {
         const entry = entries[root];
         const classicEntry = classic[root];
+        const bookCount =
+          (entry ? 1 : 0) +
+          (classicEntry
+            ? OPENITI_ORDER.filter((book) => classicEntry[book]).length
+            : 0);
         return (
           <div key={root} className="lex-entry-block">
             <p className="lex-entry">
               <span className="lex-locator">
                 مادة <bdi>{root}</bdi>
               </span>
-              {entry ? (
-                <span
-                  className={
-                    entry.review === "human"
-                      ? "lex-state has-text"
-                      : "lex-state pending-review"
-                  }
-                >
-                  مختار الصحاح — ص {entry.page} ·{" "}
-                  {entry.review === "human"
-                    ? "مُراجَعة بشريًّا"
-                    : entry.review === "agent"
-                      ? "راجعها وكيلٌ آلي مستقل — قيد مراجعة المالك"
-                      : "نُسخت آليًّا — قيد المراجعة"}
-                </span>
-              ) : classicEntry ? (
-                <span className="lex-state pending-review">
-                  متونٌ كلاسيكية مستوردة — غير مراجَعة
+              {bookCount > 0 ? (
+                <span className="lex-state has-text">
+                  في {bookCount} {bookCount > 2 ? "معاجم" : "معجم"} — افتح ما
+                  تشاء
                 </span>
               ) : (
                 <span className="lex-state">المتن غير مُدخَل</span>
               )}
             </p>
+
+            {/* «مختار الصحاح» أولًا: الطبقة الأوثق — نسخٌ بصري عن طبعة
+                حرة تُراجَع صفحةً صفحة */}
             {entry && sihah && (
-              <article className="sihah-entry">
-                {/* نصُّ الطبعة الحرّة كما نُسخ ورُوجع — بضبطه. */}
-                <p className="sihah-text" lang="ar">
-                  {entry.text}
-                </p>
-                <p className="sihah-provenance">
-                  {sihah.work} — {sihah.author} · {sihah.edition} · ص{" "}
-                  {entry.page} ·{" "}
-                  <a href={sihah.scan} target="_blank" rel="noreferrer noopener">
-                    المصوَّرة
-                  </a>{" "}
-                  · ملكية عامة —{" "}
-                  {entry.review === "human"
-                    ? "نُسخ آليًّا ورُوجعت صفحتُه بشريًّا"
-                    : entry.review === "agent"
-                      ? "نُسخ آليًّا وراجعه وكيلٌ مستقل، وينتظر مراجعة المالك"
-                      : "نُسخ آليًّا وينتظر المراجعة — يُصحَّح فور ورودها"}
-                </p>
-              </article>
+              <details className="lex-details">
+                <summary>
+                  <span className="lex-book-title">{sihah.work}</span>
+                  <span className="lex-book-info">
+                    ص {entry.page} ·{" "}
+                    {entry.review === "human"
+                      ? "مُراجَعة بشريًّا"
+                      : entry.review === "agent"
+                        ? "راجعها وكيل مستقل"
+                        : "قيد المراجعة"}
+                  </span>
+                </summary>
+                <article className="sihah-entry">
+                  {/* نصُّ الطبعة الحرّة كما نُسخ — بضبطه. */}
+                  <p className="sihah-text" lang="ar">
+                    {entry.text}
+                  </p>
+                  <p className="sihah-provenance">
+                    {sihah.work} — {sihah.author} · {sihah.edition} · ص{" "}
+                    {entry.page} ·{" "}
+                    <a
+                      href={sihah.scan}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      المصوَّرة
+                    </a>{" "}
+                    · ملكية عامة —{" "}
+                    {entry.review === "human"
+                      ? "نُسخ آليًّا ورُوجعت صفحتُه بشريًّا"
+                      : entry.review === "agent"
+                        ? "نُسخ آليًّا وراجعه وكيلٌ مستقل، وينتظر مراجعة المالك"
+                        : "نُسخ آليًّا وينتظر المراجعة — يُصحَّح فور ورودها"}
+                  </p>
+                </article>
+              </details>
             )}
-            {/* متون الكتب الثلاثة (§٢٠): المتن كلاسيكيٌّ خالص، وجهاز
-                المحقِّق مستبعَد، والإسناد كامل — والحال «مستورد» تُعرض
-                ولا يُدَّعى فوقها. */}
+
+            {/* متون الكتب الأربعة (§٢٠) — كلٌّ خلف طيّته */}
             {classicEntry &&
               openiti &&
               OPENITI_ORDER.filter((book) => classicEntry[book]).map((book) => {
                 const meta = openiti.books[book];
-                return classicEntry[book].map((record, i) => (
-                  <article className="sihah-entry openiti-entry" key={`${book}-${i}`}>
-                    <p className="sihah-text" lang="ar">
-                      {record.text}
-                    </p>
-                    <p className="sihah-provenance">
-                      {meta.title} — {meta.author} (ت{meta.author_died_hijri}هـ)
-                      {record.page ? ` · ${record.page}` : ""} · نصُّ طبعة{" "}
-                      {meta.editor} · {meta.publisher}
-                      {meta.edition ? ` · ${meta.edition}` : ""} ·{" "}
-                      <a
-                        href={meta.source_url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        المصدر الرقمي (OpenITI)
-                      </a>{" "}
-                      · متنٌ كلاسيكي مستورد آليًّا — جهاز المحقِّق مستبعَد،
-                      والنسبةُ إقرارٌ بالمصدر لا إذنٌ منه
-                    </p>
-                  </article>
-                ));
+                return (
+                  <details className="lex-details" key={book}>
+                    <summary>
+                      <span className="lex-book-title">{meta.title}</span>
+                      <span className="lex-book-info">
+                        {meta.author.split("(")[0].split("،")[0].trim()} (ت
+                        {meta.author_died_hijri}هـ)
+                        {classicEntry[book][0].page
+                          ? ` · ${classicEntry[book][0].page}`
+                          : ""}
+                      </span>
+                    </summary>
+                    {classicEntry[book].map((record, i) => (
+                      <article className="sihah-entry openiti-entry" key={i}>
+                        <p className="sihah-text" lang="ar">
+                          {record.text}
+                        </p>
+                        <p className="sihah-provenance">
+                          {meta.title} — {meta.author} (ت{meta.author_died_hijri}
+                          هـ){record.page ? ` · ${record.page}` : ""} · نصُّ
+                          طبعة {meta.editor} · {meta.publisher}
+                          {meta.edition ? ` · ${meta.edition}` : ""} ·{" "}
+                          <a
+                            href={meta.source_url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            المصدر الرقمي (OpenITI)
+                          </a>{" "}
+                          · متنٌ كلاسيكي مستورد آليًّا — جهاز المحقِّق
+                          مستبعَد، والنسبةُ إقرارٌ بالمصدر لا إذنٌ منه
+                        </p>
+                      </article>
+                    ))}
+                  </details>
+                );
               })}
           </div>
         );
       })}
 
-      {sihah && sihah.pages.reviewed < sihah.pages.transcribed && (
-        <p className="notice-inline">
-          من «مختار الصحاح»: {sihah.pages.transcribed} صفحات منسوخة،
-          راجع المالكُ {sihah.pages.reviewed} منها — والباقي منشورٌ
-          بوسم «قيد المراجعة» بقرار المالك (2026-07-30)، ويُصحَّح فور
-          مراجعته.
-        </p>
-      )}
-      {openiti && (
-        <p className="notice-inline">
-          متون الكتب الثلاثة تغطي {openiti.roots_covered} من{" "}
-          {openiti.roots_total} جذرًا قرآنيًّا — {openiti.statement}
-        </p>
-      )}
-      <p className="notice-inline">{lexicon.reason}</p>
-
-      {/* الإحالة بدل النقل: أفضل طبعةٍ مسمّاة بمحقّقها وناشرها، وطريقُ
-          القارئ إليها. والترتيب بوفاة المؤلف — زمنيّ لا تفضيليّ. */}
-      <h3 className="lex-sources-head">
-        اقرأ المادة عند — {lexicon.references.length} معاجم
-      </h3>
-      <ul className="lex-refs">
-        {lexicon.references.map((ref) => (
-          <li key={ref.work}>
-            <a href={ref.url} target="_blank" rel="noreferrer noopener">
-              {ref.work}
-            </a>
-            <span className="ref-author">
-              {ref.author} (ت{ref.died})
-            </span>
-            <span className="lex-licence">{ref.edition}</span>
-            <span className="muted">{ref.why}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="notice-inline">{lexicon.references_note}</p>
-
-      <h3 className="lex-sources-head">
-        ما فُحص من المعاجم — {lexicon.sources.length} ولم يجتز منها شيء
-      </h3>
-      <ul className="lex-sources">
-        {lexicon.sources.map((source) => (
-          <li key={source.name} data-status={source.status}>
-            <a href={source.url} target="_blank" rel="noreferrer noopener">
-              {source.name}
-            </a>
-            <span className="lex-licence">{source.licence}</span>
-            <span className="muted">{source.note}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="notice-inline">
-        التفصيل بالأدلّة في{" "}
-        <a
-          href="https://github.com/hasanawida/quran-semantic-platform/blob/main/docs/audits/LEXICON_SOURCING.md"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          سجلّ فحص المعاجم
-        </a>
-        ، وطلباتُ الإذن في{" "}
-        <a
-          href="https://github.com/hasanawida/quran-semantic-platform/blob/main/docs/permissions/REQUESTS.md"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          سجلّ الاستئذان
-        </a>
-        .
+      {/* سِجِلّات الإسناد كلها في صفحتها — رابطٌ واحد بدل قوائمَ تُثقل القراءة */}
+      <p className="lex-sources-link">
+        <Link href="/lexicon-sources">مصادر المعاجم وإسنادها وما فُحص منها ←</Link>
       </p>
     </section>
   );

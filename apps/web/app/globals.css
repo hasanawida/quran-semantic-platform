@@ -1966,3 +1966,55 @@ mark[data-root]::after {
   border-style: solid;
   color: var(--color-notice-text);
 }
+
+/* ---- طيّات المعاجم: مطويةٌ افتراضًا والقارئ يفتح ما يشاء ----
+   قرار المالك (2026-08-01): لا تُصبّ خمسةُ متونٍ دفعةً واحدة. السطر
+   الظاهر عنوانُ الكتاب وموضعُ المادة، والمتن خلف الطيّة. */
+.lex-details {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-block: var(--space-2);
+  background: var(--color-surface);
+}
+.lex-details > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-block-size: 44px; /* هدف لمس كافٍ على الهاتف */
+  box-sizing: border-box;
+}
+.lex-details > summary:hover {
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+}
+.lex-details[open] > summary {
+  border-block-end: 1px dashed var(--color-border);
+}
+.lex-book-title {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.lex-book-info {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+.lex-details .sihah-entry {
+  border: 0;
+  margin-block: 0;
+}
+.lex-sources-link {
+  font-family: var(--font-ui-stack);
+  font-size: var(--text-sm);
+  margin-block: var(--space-3) 0;
+}
+
+/* ---- الآية المقصودة من رابط «في سياق سورتها»: خلفيةٌ وحدٌّ جانبي —
+   علامتان لا لونٌ وحده، وتبقى حتى لا يضيع موضعُه إن رفع بصره ---- */
+.mushaf-list li.ayah-target {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border-inline-start: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding-inline-start: var(--space-2);
+  scroll-margin-block: 40vh;
+}

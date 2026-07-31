@@ -98,6 +98,28 @@ export default function SurahView({ surah }: { surah: number }) {
     };
   }, [surah]);
 
+  // القادم من «الآية في سياق سورتها» يحمل `#a12`: قفزة المتصفح الأصلية
+  // تقع قبل أن تُجلب الآيات وتُرسم فتخيب — فيُعاد النزول هنا بعد الرسم،
+  // وتُعلَّم الآية المقصودة (خلفية وحدٌّ لا لونًا وحده) ليجدها البصر فورًا
+  useEffect(() => {
+    if (!data) return;
+    const match = /^#a(\d+)$/.exec(window.location.hash);
+    if (!match) return;
+    const target = document.getElementById(`a${match[1]}`);
+    if (!target) return;
+    target.classList.add("ayah-target");
+    // مهلةٌ قصيرة بعد الرسم: استرجاعُ التمرير في الموجّه يجري بعد هذا
+    // الأثر فيبتلع النزول الفوري — قِيست الحال: يصل الصنف ولا يقع التمرير
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = window.setTimeout(() => {
+      target.scrollIntoView({
+        block: "center",
+        behavior: still ? "auto" : "smooth",
+      });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [data]);
+
   return (
     <main id="main" className="container">
       <nav className="crumbs">
