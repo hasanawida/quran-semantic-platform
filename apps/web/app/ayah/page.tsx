@@ -183,12 +183,37 @@ export default function AyahAnalysisPage() {
             <h1>
               سورة {data.surah_name} — الآية {data.ayah_number}
             </h1>
-            <p className="root-stats">{data.word_count} كلمة</p>
+            <p className="root-stats">
+              {data.word_count} كلمة
+              {(() => {
+                // مصدر التحليل يقال مرة واحدة هنا — لا مع كل كلمة:
+                // كان «المصدر: qac-0.4» يتكرر بعدد كلمات الآية
+                const sources = new Set(
+                  data.words.flatMap((w) => Object.keys(w.analyses_by_source))
+                );
+                return sources.size === 1
+                  ? ` · التحليل من المصدر ${[...sources][0]} — منسوب حقلا بحقل`
+                  : "";
+              })()}
+            </p>
           </header>
 
           <p className="quran-text analysis-ayah" lang="ar">
             {renderAyah(data, selected, setSelected)}
           </p>
+
+          {/* تنبيه اختلاف العد على مستوى الاية — مرة واحدة هنا، كان
+              يتكرر داخل كل بطاقة كلمة فيها مقطع غير مربوط */}
+          {data.words.some((w) =>
+            Object.values(w.analyses_by_source).some((segs) =>
+              segs.some((s) => !s.is_linked_to_token)
+            )
+          ) && (
+            <p className="notice-inline">
+              عدّ الكلمات في هذه الآية يختلف بين النص والمصدر، فلم يُربط
+              التحليل بكلمة بعينها ولا يُمكن التمييز.
+            </p>
+          )}
 
           <ol className="word-list">
             {data.words
@@ -200,11 +225,17 @@ export default function AyahAnalysisPage() {
                     <bdi className="word-surface" lang="ar">
                       {word.surface_text}
                     </bdi>
-                    <span
-                      className={`agreement-tag agreement-${word.root_agreement}`}
-                    >
-                      {AGREEMENT_LABELS[word.root_agreement]}
-                    </span>
+                    {/* الوسم للخبر لا للضجيج: «مصدر واحد» مع كل كلمة لا
+                        يخبر شيئا — يبقى وسم الخلاف وغياب التحليل وما
+                        يحمل قرارا، فيبرز المهم بدل أن يغرق في المكرر */}
+                    {word.root_agreement !== "single_source" &&
+                      word.root_agreement !== "no_root" && (
+                        <span
+                          className={`agreement-tag agreement-${word.root_agreement}`}
+                        >
+                          {AGREEMENT_LABELS[word.root_agreement]}
+                        </span>
+                      )}
                   </div>
 
                   {word.decision && (
@@ -219,9 +250,13 @@ export default function AyahAnalysisPage() {
                   )}
 
                   {Object.entries(word.analyses_by_source).map(
-                    ([source, segments]) => (
+                    ([source, segments], _, allSources) => (
                       <div key={source} className="source-block">
-                        <p className="source-name">المصدر: {source}</p>
+                        {/* اسم المصدر مع الكلمة لا يذكر إلا عند تعدد
+                            المصادر — والمصدر الواحد مذكور رأس الصفحة */}
+                        {allSources.length > 1 && (
+                          <p className="source-name">المصدر: {source}</p>
+                        )}
                         <table className="segment-table">
                           <thead>
                             <tr>
@@ -229,7 +264,6 @@ export default function AyahAnalysisPage() {
                               <th>القسم</th>
                               <th>الأصل</th>
                               <th>الجذر</th>
-                              <th>السمات (كما في المصدر)</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -257,19 +291,27 @@ export default function AyahAnalysisPage() {
                                     "—"
                                   )}
                                 </td>
-                                <td className="features-cell" data-label="السمات">
-                                  <code dir="ltr">{segment.features}</code>
-                                </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
-                        {segments.some((s) => !s.is_linked_to_token) && (
-                          <p className="unlinked-note">
-                            عدّ الكلمات في هذه الآية يختلف بين النص والمصدر،
-                            فلم يُربط التحليل بكلمة بعينها ولا يُمكن التمييز.
-                          </p>
-                        )}
+                        {/* السمات الخام بحروفها اللاتينية علم لأهله لا
+                            لمسار القراءة — خلف طية، ولا تحذف: هي نص
+                            المصدر الذي يسند كل ما في الجدول */}
+                        <details className="lex-details features-details">
+                          <summary>
+                            <span className="lex-book-info">
+                              السمات كما في المصدر ({source})
+                            </span>
+                          </summary>
+                          <ul className="features-raw">
+                            {segments.map((segment) => (
+                              <li key={segment.segment_number}>
+                                <code dir="ltr">{segment.features}</code>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
                       </div>
                     )
                   )}
@@ -283,24 +325,22 @@ export default function AyahAnalysisPage() {
               ))}
           </ol>
 
+          {/* بيان واحد آخر الصفحة — كان يطبع مرتين متتاليتين */}
           <div className="status-box notice">
-            <p>{data.notice}</p>
+            <p>
+              {data.notice}
+              {meta && (
+                <>
+                  {" "}
+                  النص من إصدار <code>{meta.data_release}</code>، حالته{" "}
+                  <strong>{meta.review_status}</strong>، ولقطة ثابتة بتاريخ{" "}
+                  {meta.snapshot_at}. <Link href="/provenance">بيان الأصول</Link>
+                </>
+              )}
+            </p>
           </div>
         </>
-      )}
-
-
-      {data && meta && (
-        <div className="status-box notice">
-          <p>
-            {data.notice} النص من إصدار <code>{meta.data_release}</code>،
-            حالته <strong>{meta.review_status}</strong>، ولقطة ثابتة بتاريخ{" "}
-            {meta.snapshot_at}. <Link href="/provenance">بيان الأصول</Link>
-          </p>
-        </div>
       )}
     </main>
   );
 }
-
-// ثم: Remove-Item -Recurse -Force apps/web/app/ayah/[surah]

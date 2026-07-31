@@ -61,12 +61,13 @@ function renderAyah(ayah: AyahRow, surah: number) {
         <span key={`g-${cursor}`}>{text.slice(cursor, word.char_start)}</span>
       );
     }
+    {/* بلا title: تلميح المتصفح كان يقفز فوق النص القراني مع كل
+        تحويم — والرابط نصه الكلمة نفسها */}
     parts.push(
       <Link
         key={`w-${word.word_number}`}
         href={`/ayah?s=${surah}&a=${ayah.ayah_number}#w${word.word_number}`}
         className="word-chip"
-        title={`تحليل الكلمة ${word.word_number}`}
       >
         {text.slice(word.char_start, word.char_end)}
       </Link>
@@ -187,14 +188,12 @@ export default function SurahView({ surah }: { surah: number }) {
             ))}
           </ol>
 
-          <div className="status-box notice">
-            <p>
-              النص من إصدار <code>{data.version.version_code}</code> (
-              {data.version.riwayah} — {data.version.script_type} — العد{" "}
-              {data.version.counting_system}). كل كلمة قابلة للنقر لعرض
-              تحليلها الصرفي منسوبًا لمصدره.
-            </p>
-          </div>
+          {/* سطر واحد: تفصيل الرواية والرسم والعد في بيان الاصول،
+              وجملة «كل كلمة قابلة للنقر» ارشاد يكتشف بالاستعمال */}
+          <p className="notice-inline">
+            النص من إصدار <code>{data.version.version_code}</code> —{" "}
+            <Link href="/provenance">بيان الأصول ←</Link>
+          </p>
         </>
       )}
     </main>

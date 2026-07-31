@@ -91,10 +91,11 @@ function WordSearch() {
       <header className="page-head">
         <h1>بحث الكلمة</h1>
       </header>
+      {/* جملة واحدة: شرح التطبيع التقني يظهر في اشعار المطابقة
+          التقريبية السياقي حين يقع فعلا */}
       <p className="page-lead">
-        اكتب كلمةً كما تُرسم في المصحف، فتُعرض مواضعها كلها، وجذرها ولمّتها
-        كما في المدونة القرآنية. والبحث يقع على صورةٍ مطبَّعة للمطابقة،
-        والمعروض نصُّ الآية حرفيًا من الإصدار الموثق.
+        اكتب كلمةً كما تُرسم في المصحف، فتُعرض مواضعها كلها وجذرها
+        ولمّتها كما في المدونة القرآنية.
       </p>
 
       <form className="search" onSubmit={submit}>
@@ -156,18 +157,18 @@ function WordSearch() {
             <h2>
               <bdi lang="ar">{data.query}</bdi>
             </h2>
-            <dl className="kv">
-              <div>
-                <dt>عدد المواضع</dt>
-                <dd>{data.count}</dd>
-              </div>
-              <div>
-                <dt>صورة البحث</dt>
-                <dd>
-                  <bdi>{data.form}</bdi>
-                </dd>
-              </div>
-            </dl>
+            {/* لا صف لعدد المواضع (مذكور في عنوان المواضع) ولا لصورة
+                البحث الا حين تخالف ما كتبه القارئ — عندها فقط تفيد */}
+            {data.form !== data.typed && (
+              <dl className="kv">
+                <div>
+                  <dt>صورة البحث</dt>
+                  <dd>
+                    <bdi>{data.form}</bdi>
+                  </dd>
+                </div>
+              </dl>
+            )}
             {data.layer === "skeleton" && (
               <p className="notice-inline">
                 لم توجد <bdi>{data.typed}</bdi> بصورتها، ووُجدت{" "}
@@ -179,8 +180,7 @@ function WordSearch() {
             <h3>الجذر واللمّة</h3>
             {data.readings.length === 0 ? (
               <p className="muted">
-                لم يعطِ المصدر الصرفي جذرًا ولا لمّةً لهذه الصورة. ويُعلن
-                ذلك ولا يُخمَّن.
+                لم يعطِ المصدر الصرفي جذرًا ولا لمّةً لهذه الصورة.
               </p>
             ) : (
               <ul className="readings">
@@ -214,9 +214,8 @@ function WordSearch() {
             )}
             {data.analysed < data.count && (
               <p className="notice-inline">
-                حُلِّل {data.analysed} من {data.count} موضعًا. والباقي في
-                آياتٍ يخالف فيها ترقيمُ المصدر للكلمات تقطيعَنا، فلا
-                يُنسب إليها تحليل — ويُعلن ذلك ولا يُخمَّن.
+                حُلِّل {data.analysed} من {data.count} موضعًا — الباقي بلا
+                تحليل في المصدر لاختلاف ترقيم الكلمات.
               </p>
             )}
           </section>
@@ -236,7 +235,10 @@ function WordSearch() {
                     >
                       {item.surah_name} {item.surah_number}:{item.ayah_number}
                     </Link>
-                    <span className="muted"> — الكلمة {item.word_number}</span>
+                    {/* رقم الكلمة لا يلزم الا حين لا تمييز في النص */}
+                    {item.char_start === null && (
+                      <span className="muted"> — الكلمة {item.word_number}</span>
+                    )}
                   </p>
                   <AyahLine
                     text={item.uthmani_text}
@@ -272,11 +274,14 @@ function WordSearch() {
             )}
           </section>
 
-          <p className="source-note">
-            النص من {data.meta.review_status === "imported" ? "إصدارٍ مستورد غير معتمد" : "الإصدار النشط"}{" "}
-            (<Link href="/provenance">بيان الأصول</Link>). والجذر واللمّة
-            منقولان عن المدونة القرآنية بجامعة ليدز، حالتهما «متحقَّق آليًّا»
-            ولم يجتازا مراجعة المنصة.
+          {/* سطر واحد بدل فقرة شارحة تتكرر بعد كل بحث */}
+          <p className="notice-inline">
+            النص:{" "}
+            {data.meta.review_status === "imported"
+              ? "إصدار مستورد غير معتمد"
+              : "الإصدار النشط"}{" "}
+            · التحليل: المدونة القرآنية، متحقَّق آليًّا —{" "}
+            <Link href="/provenance">بيان الأصول ←</Link>
           </p>
         </>
       )}

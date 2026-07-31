@@ -99,25 +99,6 @@ function AlertIcon() {
   );
 }
 
-function InfoIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="16" x2="12" y2="12" />
-      <line x1="12" y1="8" x2="12.01" y2="8" />
-    </svg>
-  );
-}
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
@@ -238,10 +219,14 @@ export default function HomePage() {
               {state.kind === "loading" ? "جارٍ البحث…" : "بحث بالجذر"}
             </button>
           </div>
-          <p className="hint">
-            تُقبل صيغ الكتابة المختلفة: بمسافات، بشرطات، أو متصلة — وصور
-            الهمزة كلها (سأل، سءل، سؤل) تصل إلى الجذر نفسه.
-          </p>
+          {/* الايضاح الوقائي لا يعرض الا حين يخفق البحث — حيث يحتاجه
+              القارئ فعلا؛ وplaceholder يمثل الصيغ اصلا */}
+          {state.kind === "error" && (
+            <p className="hint">
+              تُقبل صيغ الكتابة المختلفة: بمسافات، بشرطات، أو متصلة — وصور
+              الهمزة كلها (سأل، سءل، سؤل) تصل إلى الجذر نفسه.
+            </p>
+          )}
         </form>
 
         <div aria-live="polite" role="status">
@@ -284,10 +269,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* المادة المعجمية هنا أيضًا: هذا مسار البحث الرئيس، وكانت
-                على /root و/word وحدهما — فمن بحث من الرئيسة لم يرَ متنًا. */}
-            <LexiconSlot roots={[success.root.display_root]} />
-
             <div className="list-toolbar">
               <span id="font-size-label">حجم النص القرآني</span>
               <div
@@ -320,29 +301,27 @@ export default function HomePage() {
                   key={`${occ.surah_number}:${occ.ayah_number}`}
                   className="ayah-item"
                 >
+                  {/* سطر المرجع نفسه رابط التحليل — كان تحت كل اية
+                      سطر برابطين طويلين يتكرران عشرات المرات فيصير
+                      ثلث الصفحة روابط متطابقة */}
                   <p className="ayah-ref">
-                    سورة {occ.surah_name} — الآية {occ.ayah_number}
-                    <span className="ayah-ref-num">
-                      ({occ.surah_number}:{occ.ayah_number})
-                    </span>
+                    <Link
+                      href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
+                      title="التحليل الصرفي كلمة كلمة"
+                    >
+                      سورة {occ.surah_name} — الآية {occ.ayah_number}
+                    </Link>
+                    <Link
+                      className="ayah-context-link"
+                      href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
+                    >
+                      في سياق سورتها ←
+                    </Link>
                   </p>
                   <AyahText
                     text={occ.uthmani_text}
                     wordIndexes={occ.word_indexes}
                   />
-                  <p className="ayah-actions">
-                    <Link
-                      href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
-                    >
-                      التحليل الصرفي كلمةً كلمة ←
-                    </Link>
-                    {" · "}
-                    <Link
-                      href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
-                    >
-                      الآية في سياق سورتها ←
-                    </Link>
-                  </p>
                 </li>
               ))}
             </ol>
@@ -359,46 +338,53 @@ export default function HomePage() {
                   : `عرض المزيد (${success.occurrences.length} من ${success.totalAyahs})`}
               </button>
             )}
+
+            {/* المادة المعجمية بعد الايات لا قبلها: كانت تدفع اول اية
+                الى اسفل الشاشة — والقارئ جاء للايات اولا */}
+            <LexiconSlot roots={[success.root.display_root]} />
           </section>
         )}
 
-        <div className="status-box notice">
-          <InfoIcon />
-          <p>
-            النص من مشروع تنزيل (رواية حفص، الرسم العثماني) والجذور من
-            المدونة القرآنية بجامعة ليدز — بيانات مستوردة موثقة ببصمات،
-            ولم تخضع بعد لمراجعة المنصة المزدوجة.
+        {/* سطر اسناد واحد بدل صندوق فقرة كاملة يعرض حتى قبل اي بحث */}
+        {success && (
+          <p className="notice-inline">
+            النص: مشروع تنزيل · الجذور: المدونة القرآنية —{" "}
+            <Link href="/provenance">بيان الأصول ←</Link>
           </p>
-        </div>
+        )}
       </section>
 
-      <section className="method">
-        <div className="container">
-          <h2>أربع طبقات لا تختلط</h2>
-          <p>
-            القيمة الأساسية للمنصة هي الفصل الصريح بين ما هو نص موثق وما هو
-            تحليل منقول وما هو قرار بشري وما هو اقتراح آلي.
-          </p>
-          <ol className="layers">
-            <li>
-              <strong>النص القرآني الموثق</strong>
-              <span>إصدار معروف ببصمة رقمية، لا يعدَّل عبر محرر عادي.</span>
-            </li>
-            <li>
-              <strong>التحليل اللغوي المنقول</strong>
-              <span>منسوب لمصادره مع إظهار اختلاف المصادر حقلًا بحقل.</span>
-            </li>
-            <li>
-              <strong>القرار العلمي البشري</strong>
-              <span>مراجعة مستقلة معللة، ولا يعتمد باحث عمله بنفسه.</span>
-            </li>
-            <li>
-              <strong>الاقتراح الآلي</strong>
-              <span>موسوم دائمًا بحالة «آلي فقط» ولا يُعتمد تلقائيًا.</span>
-            </li>
-          </ol>
-        </div>
-      </section>
+      {/* منهج الطبقات الاربع يقرا مرة في العمر — يظهر قبل اول بحث
+          حيث يعرف الزائر المنصة، ويفسح بعده للنتائج */}
+      {!success && (
+        <section className="method">
+          <div className="container">
+            <h2>أربع طبقات لا تختلط</h2>
+            <p>
+              القيمة الأساسية للمنصة هي الفصل الصريح بين ما هو نص موثق وما هو
+              تحليل منقول وما هو قرار بشري وما هو اقتراح آلي.
+            </p>
+            <ol className="layers">
+              <li>
+                <strong>النص القرآني الموثق</strong>
+                <span>إصدار معروف ببصمة رقمية، لا يعدَّل عبر محرر عادي.</span>
+              </li>
+              <li>
+                <strong>التحليل اللغوي المنقول</strong>
+                <span>منسوب لمصادره مع إظهار اختلاف المصادر حقلًا بحقل.</span>
+              </li>
+              <li>
+                <strong>القرار العلمي البشري</strong>
+                <span>مراجعة مستقلة معللة، ولا يعتمد باحث عمله بنفسه.</span>
+              </li>
+              <li>
+                <strong>الاقتراح الآلي</strong>
+                <span>موسوم دائمًا بحالة «آلي فقط» ولا يُعتمد تلقائيًا.</span>
+              </li>
+            </ol>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

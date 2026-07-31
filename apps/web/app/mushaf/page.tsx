@@ -220,11 +220,15 @@ export default function MushafIndexPage() {
           />
           <button className="primary">بحث</button>
         </div>
-        <p className="hint">
-          تُقبل صور الهمزة كلها والتاء المربوطة والهاء، والأرقام العربية
-          واللاتينية معًا. وفروق الرسم العثماني تُعالَج بطبقة مطابقة
-          تقريبية موسومة في النتائج.
-        </p>
+        {/* تفصيل المطابقة خلف طية: ايضاح تقني لا يقرا في كل زيارة */}
+        <details className="hint">
+          <summary>كيف تعمل المطابقة؟</summary>
+          <p>
+            تُقبل صور الهمزة كلها والتاء المربوطة والهاء، والأرقام العربية
+            واللاتينية معًا. وفروق الرسم العثماني تُعالَج بطبقة مطابقة
+            تقريبية موسومة في النتائج.
+          </p>
+        </details>
       </form>
 
       <div aria-live="polite" role="status">
@@ -258,7 +262,9 @@ export default function MushafIndexPage() {
         </div>
       )}
 
-      {!noActiveVersion && (
+      {/* عند البحث بكلمة من اية لا تزاحم رسالة «لا سورة تطابق» النتائج
+          الحقيقية — يخفى قسم السور الفارغ وتتقدم نتائج النص */}
+      {!noActiveVersion && !(search && surahs && surahs.length === 0) && (
         <section className="section" aria-labelledby="surahs-head">
           <h2 id="surahs-head">
             السور{query && surahs ? ` — ${surahs.length} نتيجة` : ""}
@@ -309,28 +315,28 @@ export default function MushafIndexPage() {
                   className="ayah-item"
                 >
                   <p className="ayah-ref">
-                    سورة {hit.surah_name} — الآية {hit.ayah_number}
-                    <span className="ayah-ref-num">
-                      ({hit.surah_number}:{hit.ayah_number})
-                    </span>
+                    <Link
+                      href={`/ayah?s=${hit.surah_number}&a=${hit.ayah_number}`}
+                      title="التحليل الصرفي كلمة كلمة"
+                    >
+                      سورة {hit.surah_name} — الآية {hit.ayah_number}
+                    </Link>
                     {hit.match_kind === "approximate" && (
-                      <span className="chip is-caution">
-                        مطابقة تقريبية — فروق الرسم العثماني
+                      <span
+                        className="chip is-caution"
+                        title="مطابقة تقريبية لفروق الرسم العثماني"
+                      >
+                        تقريبية
                       </span>
                     )}
-                  </p>
-                  <MarkedAyah hit={hit} />
-                  <p className="ayah-actions">
-                    <Link href={`/ayah?s=${hit.surah_number}&a=${hit.ayah_number}`}>
-                      التحليل الصرفي ←
-                    </Link>
-                    {" · "}
                     <Link
+                      className="ayah-context-link"
                       href={`/mushaf/${hit.surah_number}#a${hit.ayah_number}`}
                     >
                       في سياق سورتها ←
                     </Link>
                   </p>
+                  <MarkedAyah hit={hit} />
                 </li>
               ))}
             </ol>
@@ -361,20 +367,17 @@ export default function MushafIndexPage() {
             )}
           </p>
 
-          <div className="status-box notice">
-            <p>{search.scope_note}</p>
-          </div>
         </section>
       )}
 
+      {/* اشعار ختامي واحد: كانت ثلاثة صناديق مبعثرة، والوسم مكرر مع
+          راس الصفحة (موضعه الواحد) */}
       {meta && (
-        <div className="status-box notice">
-          <p>
-            النص من إصدار <code>{meta.data_release}</code>، حالته{" "}
-            <strong>{reviewLabel}</strong>. {meta.warning}{" "}
-            <Link href="/provenance">بيان الأصول الكامل</Link>
-          </p>
-        </div>
+        <p className="notice-inline">
+          {search ? `${search.scope_note} · ` : ""}النص من إصدار{" "}
+          <code>{meta.data_release}</code> —{" "}
+          <Link href="/provenance">بيان الأصول ←</Link>
+        </p>
       )}
     </main>
   );

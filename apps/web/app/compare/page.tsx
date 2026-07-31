@@ -130,14 +130,14 @@ export default function ComparePage() {
       <header className="page-head">
         <h1>مقارنة الجذور</h1>
       </header>
+      {/* التحذير الدلالي في الاشعار الختامي وحده — كان مكررا حرفيا
+          قبل النتائج وبعدها */}
       <p className="page-lead">
         قارن توزيع جذرين فأكثر على المصحف، وانظر الآيات التي يجتمعان فيها.
-        عرض بيانات لا حكم دلالي: <strong>الاشتراك في الورود لا يعني
-        الترادف</strong>.
       </p>
 
       <form className="search" onSubmit={submit}>
-        <label htmlFor="roots">جذور مفصولة بفواصل</label>
+        <label htmlFor="roots">الجذور (حتى خمسة، بفواصل)</label>
         <div className="search-row">
           <input
             id="roots"
@@ -150,7 +150,6 @@ export default function ComparePage() {
             {busy ? "جارٍ…" : "قارن"}
           </button>
         </div>
-        <p className="hint">حتى خمسة جذور. صور الهمزة كلها تصل إلى الجذر نفسه.</p>
       </form>
 
       {error && (
@@ -205,10 +204,15 @@ export default function ComparePage() {
           </section>
 
           <section className="section">
-            <h2>
-              الآيات المشتركة ({data.shared.ayah_count}) في{" "}
-              {data.shared.surah_count} سورة
-            </h2>
+            {/* عنوان ثابت وسطر بيان واحد تحته — كان العنوان جملة
+                احصائية وبيان المعروض بعيدا في ذيل القسم */}
+            <h2>الآيات المشتركة</h2>
+            <p className="root-stats">
+              {data.shared.ayah_count} آية في {data.shared.surah_count} سورة
+              {data.shared.shown < data.shared.ayah_count
+                ? ` — معروض منها ${data.shared.shown}`
+                : ""}
+            </p>
             {data.shared.ayahs.length === 0 ? (
               <p className="unlinked-note">
                 لا توجد آية يجتمع فيها هذه الجذور كلها.
@@ -221,35 +225,27 @@ export default function ComparePage() {
                     className="ayah-item"
                   >
                     <p className="ayah-ref">
-                      سورة {item.surah_name} — الآية {item.ayah_number}
-                      <span className="ayah-ref-num">
-                        ({item.surah_number}:{item.ayah_number})
-                      </span>
+                      <Link
+                        href={`/ayah?s=${item.surah_number}&a=${item.ayah_number}`}
+                        title="التحليل الصرفي كلمة كلمة"
+                      >
+                        سورة {item.surah_name} — الآية {item.ayah_number}
+                      </Link>
+                      <Link
+                        className="ayah-context-link"
+                        href={`/mushaf/${item.surah_number}#a${item.ayah_number}`}
+                      >
+                        في سياق سورتها ←
+                      </Link>
                     </p>
                     <SharedAyahText
                       text={item.uthmani_text}
                       byRoot={item.word_indexes_by_root}
                       order={order}
                     />
-                    <p className="ayah-actions">
-                      <Link href={`/ayah?s=${item.surah_number}&a=${item.ayah_number}`}>
-                        التحليل الصرفي ←
-                      </Link>
-                      {" · "}
-                      <Link
-                        href={`/mushaf/${item.surah_number}#a${item.ayah_number}`}
-                      >
-                        في سياق سورتها ←
-                      </Link>
-                    </p>
                   </li>
                 ))}
               </ol>
-            )}
-            {data.shared.shown < data.shared.ayah_count && (
-              <p className="unlinked-note">
-                معروض {data.shared.shown} من {data.shared.ayah_count} آية.
-              </p>
             )}
           </section>
 

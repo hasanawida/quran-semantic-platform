@@ -6,7 +6,7 @@ import Link from "next/link";
 // `page.node.tsx` فتنعدم من البناء. فرابطٌ إليها يعطي 404.
 const STATIC = process.env.NEXT_PUBLIC_QSP_STATIC === "1";
 
-import { ROLE_LABELS, useAuth } from "../lib/auth";
+import { useAuth } from "../lib/auth";
 
 function BookIcon() {
   return (
@@ -67,12 +67,8 @@ export default function Header() {
               الادعاءات
             </Link>
           )}
-          <Link href="/methodology" className="nav-link">
-            المنهج والمصادر
-          </Link>
-          <Link href="/provenance" className="nav-link">
-            بيان الأصول
-          </Link>
+          {/* المنهج وبيان الاصول مرجعيان لا قرائيان — موضعهما التذييل،
+              فتخف الترويسة الى مسارات القراءة وحدها ولا تفيض على الهاتف */}
           {!STATIC && user && (
             <Link href="/review" className="nav-link">
               صندوق المراجعة
@@ -87,10 +83,9 @@ export default function Header() {
               فبلا هذا الشرط يظهر زرّ «دخول» ويعطي 404. */}
           {STATIC ? null : loading ? null : user ? (
             <div className="user-chip">
+              {/* الاسم وحده: قائمة الادوار كانت تطول فتزاحم روابط
+                  التنقل، وموضعها صفحة الحساب */}
               <span className="user-name">{user.display_name}</span>
-              <span className="user-roles">
-                {user.roles.map((r) => ROLE_LABELS[r] ?? r).join("، ")}
-              </span>
               <Link href="/account" className="nav-link">
                 حسابي
               </Link>

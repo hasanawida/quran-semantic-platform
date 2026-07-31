@@ -135,29 +135,26 @@ export default function RootPage() {
         </span>
       </header>
 
-      {/* المادة المعجمية أَولى بصفحة الجذر منها بصفحة الكلمة —
-          فالمعاجم العربية مرتَّبةٌ بالجذر لا باللفظ. */}
-      <LexiconSlot roots={[info.display_root]} />
-
       <ol className="ayah-list">
         {occurrences.map((occ) => (
           <li key={`${occ.surah_number}:${occ.ayah_number}`} className="ayah-item">
+            {/* سطر المرجع نفسه رابط التحليل، ورابط السياق تابع هادئ —
+                كان تحت كل اية سطر برابطين يتكرران عشرين مرة */}
             <p className="ayah-ref">
-              سورة {occ.surah_name} — الآية {occ.ayah_number}
-              <span className="ayah-ref-num">
-                ({occ.surah_number}:{occ.ayah_number})
-              </span>
-            </p>
-            <AyahText text={occ.uthmani_text} wordIndexes={occ.word_indexes} />
-            <p className="ayah-actions">
-              <Link href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}>
-                التحليل الصرفي ←
+              <Link
+                href={`/ayah?s=${occ.surah_number}&a=${occ.ayah_number}`}
+                title="التحليل الصرفي كلمة كلمة"
+              >
+                سورة {occ.surah_name} — الآية {occ.ayah_number}
               </Link>
-              {" · "}
-              <Link href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}>
+              <Link
+                className="ayah-context-link"
+                href={`/mushaf/${occ.surah_number}#a${occ.ayah_number}`}
+              >
                 في سياق سورتها ←
               </Link>
             </p>
+            <AyahText text={occ.uthmani_text} wordIndexes={occ.word_indexes} />
           </li>
         ))}
       </ol>
@@ -185,16 +182,17 @@ export default function RootPage() {
         )}
       </nav>
 
+      {/* المادة المعجمية بعد الايات: القارئ جاء للايات اولا، والمعاجم
+          مطوية تحتها لمن ارادها */}
+      <LexiconSlot roots={[info.display_root]} />
+
+      {/* سطر اسناد واحد: الوسم في راس الصفحة (موضعه الواحد) والفقرة
+          الطويلة كانت تكرره بخط عريض مع كل جذر */}
       {meta && (
-        <div className="status-box notice">
-          <p>
-            النص من مشروع تنزيل والجذور من المدونة القرآنية بجامعة ليدز —
-            بيانات مستوردة موثقة ببصمات، حالتها{" "}
-            <strong>{STATUS_LABELS[info.status] ?? info.status}</strong>، ولم
-            تخضع بعد لمراجعة المنصة المزدوجة. لقطة ثابتة بتاريخ{" "}
-            {meta.snapshot_at}. <Link href="/provenance">بيان الأصول الكامل</Link>
-          </p>
-        </div>
+        <p className="notice-inline">
+          النص: مشروع تنزيل · الجذور: المدونة القرآنية · لقطة{" "}
+          {meta.snapshot_at} — <Link href="/provenance">بيان الأصول ←</Link>
+        </p>
       )}
     </main>
   );

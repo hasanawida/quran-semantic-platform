@@ -183,10 +183,15 @@ export default function MorphologySearchPage() {
                     )}
                     <span className="chip">{hit.pos_label ?? hit.pos}</span>
                   </div>
+                  {/* المرجع مرة واحدة وهو رابط التحليل، بلا تكرار رقمي
+                      ولا سطر روابط مستقل */}
                   <p className="claim-meta">
-                    سورة {hit.surah_name} — الآية {hit.ayah_number} (
-                    {hit.surah_number}:{hit.ayah_number}) · المصدر:{" "}
-                    {hit.source}
+                    <Link
+                      href={`/ayah?s=${hit.surah_number}&a=${hit.ayah_number}`}
+                      title="التحليل الكامل للاية"
+                    >
+                      سورة {hit.surah_name} — الآية {hit.ayah_number}
+                    </Link>
                     {hit.lemma && (
                       <>
                         {" "}
@@ -202,21 +207,25 @@ export default function MorphologySearchPage() {
                         </Link>
                       </>
                     )}
-                  </p>
-                  <p className="features-cell">
-                    <code dir="ltr">{hit.features}</code>
-                  </p>
-                  <p className="ayah-actions">
-                    <Link href={`/ayah?s=${hit.surah_number}&a=${hit.ayah_number}`}>
-                      التحليل الكامل للآية ←
-                    </Link>
-                    {" · "}
                     <Link
+                      className="ayah-context-link"
                       href={`/mushaf/${hit.surah_number}#a${hit.ayah_number}`}
                     >
                       في سياق سورتها ←
                     </Link>
                   </p>
+                  {/* السمات الخام خلف طية — رطانة لاتينية كانت تقطع
+                      كل بطاقة، والاسناد محفوظ داخلها باسم المصدر */}
+                  <details className="lex-details features-details">
+                    <summary>
+                      <span className="lex-book-info">
+                        السمات كما في المصدر ({hit.source})
+                      </span>
+                    </summary>
+                    <p className="features-raw">
+                      <code dir="ltr">{hit.features}</code>
+                    </p>
+                  </details>
                 </li>
               ))}
             </ul>

@@ -69,15 +69,19 @@
   --font-mono-stack: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
 
   /* ---- مقياس نصي واحد ---- */
+  /* الأساس 17px لا 16: خط النسخ العربي يبدو أصغر بصريا من اللاتيني
+     بالحجم نفسه، والقراءة الطويلة عند 16px مجهدة (مراجعة 2026-08-01) */
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.1875rem;
   --text-xl: 1.375rem;
   --text-2xl: 1.75rem;
   --text-3xl: 2.25rem;
 
-  --leading-tight: 1.3;
+  /* 1.4 لا 1.3: العناوين العربية الملتفة سطرين تتلامس همزاتها العلوية
+     مع كسرات السطر الاعلى عند 1.3 */
+  --leading-tight: 1.4;
   --leading-normal: 1.75;
   --leading-quran: 2.2;
 
@@ -214,6 +218,15 @@ h4 {
   font-weight: 700;
   margin-block: 0 var(--space-3);
   text-wrap: balance;
+}
+
+/* مبدأ التجاور: العنوان اقرب الى قسمه منه الى الفقرة قبله — فوقه
+   فسحة واسعة وتحته space-3 وحدها */
+:is(p, ul, ol, dl, table) + :is(h2, h3) {
+  margin-block-start: var(--space-8);
+}
+:is(p, ul, ol, dl, table) + h4 {
+  margin-block-start: var(--space-6);
 }
 
 h1 {
@@ -413,7 +426,6 @@ table {
 }
 
 .chip.is-positive,
-.agreement-agreement,
 .stance-supports,
 .active-badge,
 .ok-badge,
@@ -422,6 +434,14 @@ table {
   background: var(--color-success-bg);
   border-color: var(--color-success-border);
   color: var(--color-success-text);
+}
+
+/* «اتفاق المصادر» حال مطمئنة غالبة — لون هادئ، ويبقى البروز اللوني
+   لوسم الخلاف وغياب التحليل وحدهما فيقفز للعين ما يستحق الانتباه */
+.agreement-agreement {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
 }
 
 .chip.is-negative,
@@ -435,15 +455,24 @@ table {
 }
 
 .chip.is-caution,
-.agreement-single_source,
-.review-tag,
-.badge,
-.vbadge.status-imported,
 .vbadge.status-under_review,
 .vbadge.status-machine_generated {
   background: var(--color-notice-bg);
   border-color: var(--color-notice-border);
   color: var(--color-notice-text);
+}
+
+/* «مستورد» هو الحال الغالبة لجل المحتوى — لو صبغت بالاصفر امتلات
+   الصفحات رقاقات انذار متكررة وفقد الاصفر قدرته على الانذار حين يلزم.
+   الوسم باق بنصه (فريضة الصدق)، ولونه محايد هادئ؛ ويحتفظ بالتنبيه
+   الاصفر لقيد المراجعة والمولد اليا حصرا */
+.agreement-single_source,
+.review-tag,
+.badge,
+.vbadge.status-imported {
+  background: var(--color-neutral-bg, var(--color-surface));
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
 }
 
 /* ---- الأزرار ---- */
@@ -693,6 +722,11 @@ mark {
   box-shadow: inset 0 -0.16em 0 var(--color-accent);
   font-weight: 700;
 }
+/* لا تثخين داخل النص القرآني: تثخين خط المصحف يشوه رسوم الكلمات
+   ويصنع بقعا ثقيلة — والتمييز محمول بالخلفية والخط السفلي اصلا */
+.quran-text mark {
+  font-weight: inherit;
+}
 
 /* ============================================================
    4) الهيكل: الترويسة والتذييل
@@ -796,6 +830,13 @@ mark {
 
 .site-footer p {
   margin-block: 0 var(--space-1);
+}
+
+/* بعد فتات الخبز يقترب العنوان: فجوة space-10 الكاملة كانت تفصل
+   الفتات عن عنوانه وتدفع المحتوى */
+.crumbs + .page-head,
+.crumbs + .analysis-header {
+  margin-block-start: var(--space-4);
 }
 
 .crumbs {
@@ -913,6 +954,13 @@ mark {
   color: var(--color-text-faint);
 }
 
+/* رابط السياق: تابع هادئ في ذيل سطر المرجع لا سطر مستقل */
+.ayah-context-link {
+  margin-inline-start: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 .ayah-item .quran-text {
   margin: 0;
 }
@@ -1018,6 +1066,10 @@ mark {
 
 .analysis-ayah {
   margin-block-end: var(--space-6);
+  /* حد عرض السطر القراني: بلا حد يمتد الى 36em من خط المصحف داخل
+     الحاوية العريضة فترهق العودة الى بداية السطر */
+  max-inline-size: 46rem;
+  margin-inline: auto;
 }
 
 .word-chip {
@@ -1179,6 +1231,7 @@ mark {
 
 .claim-statement {
   margin-block: 0 var(--space-3);
+  max-inline-size: var(--measure);
 }
 
 .claim-meta {
@@ -1480,12 +1533,15 @@ details > summary {
   border: var(--border-hairline);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
+  /* عمود قراءة مضبوط العرض — انظر تعليل .analysis-ayah */
+  max-inline-size: 46rem;
+  margin-inline: auto;
 }
 
+/* فصل الايات بالبياض وحده: تراكم الحدود المتقطعة عبر السورة كان
+   يقطع مسار القراءة المتصل، وعلامة رقم الاية تفصل اصلا */
 .mushaf-list li + li {
-  margin-block-start: var(--space-4);
-  padding-block-start: var(--space-4);
-  border-block-start: 1px dashed var(--color-border);
+  margin-block-start: var(--space-5);
 }
 
 .mushaf-list .quran-text {
@@ -1612,11 +1668,12 @@ mark.mark-root-3 { box-shadow: inset 0 -0.3em 0 -0.16em var(--color-accent); }
 mark.mark-root-4 { box-shadow: inset 0 -0.16em 0 var(--color-success-text); }
 mark.mark-root-5 { box-shadow: inset 0 -0.16em 0 var(--color-error-text); }
 
-/* الرقم الترتيبي للجذر يظهر مع العلامة فلا يُعتمد اللون وحده */
+/* الرقم الترتيبي للجذر يظهر مع العلامة فلا يُعتمد اللون وحده.
+   حد ادنى 11px: كان يهبط دون 10px على الهاتف فلا يقرا اصلا */
 mark[data-root]::after {
   content: attr(data-root);
   font-family: var(--font-ui-stack);
-  font-size: 0.45em;
+  font-size: max(0.45em, 0.6875rem);
   vertical-align: super;
   margin-inline-start: 0.15em;
   opacity: 0.85;
@@ -1770,9 +1827,10 @@ mark[data-root]::after {
   border-block-end: 1px solid var(--color-notice-border);
   color: var(--color-notice-text);
   font-family: var(--font-ui-stack);
-  font-size: var(--text-sm);
-  line-height: 1.7;
-  padding: var(--space-3) var(--space-4);
+  /* وزن حاشية حال لا وزن اعلان: الشريط يعتلي كل صفحة فيهدا حجمه */
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  padding: var(--space-2) var(--space-4);
   text-align: center;
   text-wrap: pretty;
 }
@@ -1785,12 +1843,14 @@ mark[data-root]::after {
   margin-block: var(--space-5);
   padding: var(--space-4);
 }
+/* سلم العناوين: صفحة 2xl ثم بطاقة xl ثم فرع lg — كان h2 البطاقة بحجم
+   h1 الصفحة فيتنازعان المرتبة */
 .word-summary > h2 {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   margin: 0 0 var(--space-3);
 }
 .word-summary > h3 {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   margin-block: var(--space-4) var(--space-2);
 }
 .readings {
@@ -1848,16 +1908,19 @@ mark[data-root]::after {
   padding-block-start: var(--space-4);
 }
 
-/* ---------- المادة المعجمية: موضعٌ مفتوح ومتنٌ غير مُدخَل ---------- */
+/* ---------- المادة المعجمية ---------- */
+/* سطح محايد لا اصفر: تلوين الحاوية كلها بلون التنبيه كان يجعلها اكبر
+   بقعة لونية في الصفحة ويسحب البصر من المتن — والحال يحملها وسم
+   .lex-state الموضعي وحده */
 .lexicon-slot {
-  background: var(--color-notice-bg);
-  border: 1px solid var(--color-notice-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin-block: var(--space-5);
   padding: var(--space-4);
 }
 .lexicon-slot > h2 {
-  color: var(--color-notice-text);
+  color: var(--color-text);
   font-size: var(--text-base);
   margin: 0 0 var(--space-3);
 }
@@ -1947,9 +2010,12 @@ mark[data-root]::after {
   padding: var(--space-3);
 }
 .sihah-text {
-  font-size: var(--text-base);
+  /* المتن الكلاسيكي المشكول هو المقصود بالقراءة — درجة فوق النثر
+     ودرجتان فوق حاشية الاسناد، فيستقيم التسلسل */
+  font-size: var(--text-lg);
   line-height: 2;
   margin: 0 0 var(--space-2);
+  max-inline-size: var(--measure);
 }
 .sihah-provenance {
   border-block-start: 1px solid var(--color-border);
@@ -2007,6 +2073,23 @@ mark[data-root]::after {
   font-family: var(--font-ui-stack);
   font-size: var(--text-sm);
   margin-block: var(--space-3) 0;
+}
+
+/* السمات الخام خلف طيتها: قائمة هادئة أحادية المسافة */
+.features-details {
+  margin-block: var(--space-2) 0;
+}
+.features-raw {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  overflow-x: auto;
+}
+.features-raw code {
+  white-space: nowrap;
 }
 
 /* ---- الآية المقصودة من رابط «في سياق سورتها»: خلفيةٌ وحدٌّ جانبي —
