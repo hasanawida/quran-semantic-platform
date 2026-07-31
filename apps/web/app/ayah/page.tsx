@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { ayahAnalysis, getMeta, type Meta } from "../lib/staticdata";
+import {
+  ayahAnalysis,
+  getMeta,
+  getTafsirMeta,
+  tafsirSurah,
+  type Meta,
+  type TafsirMeta,
+  type TafsirPassage,
+} from "../lib/staticdata";
 
 // انقل من الملف القديم حرفيًا: النوع Segment/Word/AyahAnalysis،
 // وAGREEMENT_LABELS، وDECISION_LABELS، ودالة renderAyah كاملةً.
@@ -126,6 +134,24 @@ export default function AyahAnalysisPage() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
+  const [tafsir, setTafsir] = useState<TafsirPassage[] | null>(null);
+  const [tafsirMeta, setTafsirMeta] = useState<TafsirMeta | null>(null);
+
+  // مقاطع تفسير السورة (§٢٠): تجلب مرة لكل سورة، والاية تلتقط مقطعها
+  useEffect(() => {
+    if (!ref) return;
+    let live = true;
+    Promise.all([tafsirSurah(ref.surah), getTafsirMeta()])
+      .then(([passages, info]) => {
+        if (!live) return;
+        setTafsir(passages);
+        setTafsirMeta(info);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [ref]);
 
   // المعاملان من العنوان لا من مسار مولَّد — فمسار واحد يخدم 6,236 آية
   useEffect(() => {
@@ -324,6 +350,67 @@ export default function AyahAnalysisPage() {
                 </li>
               ))}
           </ol>
+
+          {/* التفسير (§٢٠): مقاطع كلاسيكية مطوية، مداها من ارقام ايات
+              المطبوع، وحارس المطابقة يثبت الربط او يسمه صراحة */}
+          {ref &&
+            tafsir &&
+            tafsirMeta &&
+            (() => {
+              const here = tafsir.filter(
+                (p) => p.ayah_start <= ref.ayah && ref.ayah <= p.ayah_end
+              );
+              if (here.length === 0) return null;
+              return (
+                <section className="lexicon-slot" aria-labelledby="tafsir-head">
+                  <h2 id="tafsir-head">التفسير</h2>
+                  {here.map((passage, i) => {
+                    const work = tafsirMeta.works[passage.work];
+                    if (!work) return null;
+                    return (
+                      <details className="lex-details" key={i}>
+                        <summary>
+                          <span className="lex-book-title">{work.title}</span>
+                          <span className="lex-book-info">
+                            {work.author.split("،")[0]} (ت
+                            {work.author_died_hijri}هـ) · الآيات{" "}
+                            {passage.ayah_start}
+                            {passage.ayah_end > passage.ayah_start
+                              ? `–${passage.ayah_end}`
+                              : ""}
+                            {passage.page ? ` · ${passage.page}` : ""}
+                          </span>
+                        </summary>
+                        <article className="sihah-entry openiti-entry">
+                          <p className="sihah-text" lang="ar">
+                            {passage.text}
+                          </p>
+                          <p className="sihah-provenance">
+                            {work.title} — {work.author} (ت
+                            {work.author_died_hijri}هـ)
+                            {passage.page ? ` · ${passage.page}` : ""} · نصُّ
+                            طبعة {work.editor} · {work.publisher}
+                            {work.edition ? ` · ${work.edition}` : ""} ·{" "}
+                            <a
+                              href={work.source_url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                            >
+                              المصدر الرقمي (OpenITI)
+                            </a>{" "}
+                            · متنٌ كلاسيكي مستورد آليًّا — جهاز المحقِّق
+                            مستبعَد، والنسبةُ إقرارٌ بالمصدر لا إذنٌ منه ·{" "}
+                            {passage.anchored
+                              ? "الربط بالآية مثبَت بمطابقة اقتباس المطبوع بنص المصحف"
+                              : "رُبط بترتيب المطبوع وأرقام آياته — ولم تثبت المطابقة الآلية لاقتباسه"}
+                          </p>
+                        </article>
+                      </details>
+                    );
+                  })}
+                </section>
+              );
+            })()}
 
           {/* بيان واحد آخر الصفحة — كان يطبع مرتين متتاليتين */}
           <div className="status-box notice">

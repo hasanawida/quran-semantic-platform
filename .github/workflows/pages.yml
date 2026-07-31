@@ -50,7 +50,7 @@ jobs:
       # تحريفٌ يُنشر باسم المصحف، فلا يُبنى الموقعُ وفيه واحد.
       - name: Lexicon labels and quotes
         working-directory: apps/api
-        run: pytest tests/test_lexicon_sihah.py tests/test_lexicon_quotes.py tests/test_lexicon_openiti.py -q
+        run: pytest tests/test_lexicon_sihah.py tests/test_lexicon_quotes.py tests/test_lexicon_openiti.py tests/test_tafsir.py -q
 
       # حارس الروابط: رابط إلى مسار محذوف لا يكشفه مترجم ولا بناء —
       # `<Link href>` نصٌّ حرّ — ولا يظهر إلا حين يضغط مستعمل فيصل 404.

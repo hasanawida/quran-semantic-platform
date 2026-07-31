@@ -823,6 +823,53 @@ export type OpenitiEntry = Record<string, OpenitiRecord[]>;
  * المتن كلاسيكيٌّ خالص وجهاز المحقِّق مستبعَد (§٢٠)، والحال `imported`
  * أبدًا — فالعرض يسند ولا يدّعي مراجعة.
  */
+// ---------- التفسير: متون كلاسيكية مقطعة بالاية (§٢٠) ----------
+export type TafsirWork = {
+  title: string;
+  author: string;
+  author_died_hijri: string;
+  editor: string;
+  publisher: string;
+  edition: string;
+  openiti_uri: string;
+  source_url: string;
+  sha256: string;
+  apparatus: string;
+  passages: number;
+  anchored: number;
+};
+
+export type TafsirMeta = {
+  decision: string;
+  review_status: string;
+  works: Record<string, TafsirWork>;
+};
+
+/** مقطع تفسير: مداه من ارقام الايات في اقتباس المطبوع نفسه، وanchored
+ *  تثبت ان الاقتباس طابق نص المصحف المبصوم — وما لم يثبت يعرض بوسمه. */
+export type TafsirPassage = {
+  work: string;
+  surah: number;
+  ayah_start: number;
+  ayah_end: number;
+  text: string;
+  anchored: boolean;
+  page?: string;
+};
+
+export const getTafsirMeta = () => loadJson<TafsirMeta>("tafsir.json");
+
+/** مقاطع تفسير السورة كلها — تجلب مرة وتخدم كل اياتها. */
+export async function tafsirSurah(
+  surah: number
+): Promise<TafsirPassage[] | null> {
+  try {
+    return await loadJson<TafsirPassage[]>(`tafsir/${surah}.json`);
+  } catch {
+    return null;
+  }
+}
+
 export async function openitiEntry(root: string): Promise<OpenitiEntry | null> {
   const key = root.replace(/\s+/g, "");
   if (!key) return null;

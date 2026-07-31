@@ -233,6 +233,25 @@ def main() -> None:
         openiti_roots = sorted(openiti["entries"])
         assert len(openiti_roots) == openiti_meta["roots_covered"]
 
+    # ---------- 5-د) التفسير: متون كلاسيكية مقطعة بالآية (§٢٠) ----------
+    # شظيةٌ لكل سورة: القارئ في صفحة آيةٍ يجلب تفسير سورتها وحدها،
+    # وتبقى محفوظة له وهو يتنقل بين آيات السورة نفسها.
+    tafsir_path = DATA / "tafsir_bundle.json.gz"
+    tafsir_meta: dict | None = None
+    if tafsir_path.exists():
+        with gzip.open(tafsir_path, "rt", encoding="utf-8") as handle:
+            tafsir = json.load(handle)
+        tafsir_meta = tafsir["meta"]
+        by_surah: dict[int, list[dict]] = {}
+        for work_key, passages in tafsir["passages"].items():
+            for passage in passages:
+                assert 1 <= passage["surah"] <= 114, passage["surah"]
+                by_surah.setdefault(passage["surah"], []).append(passage)
+        for surah_number, payload in by_surah.items():
+            payload.sort(key=lambda p: (p["ayah_start"], p["work"]))
+            write(f"tafsir/{surah_number}.json", payload)
+        write("tafsir.json", tafsir_meta)
+
     write(
         "lexicon.json",
         {
