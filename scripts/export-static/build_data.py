@@ -47,9 +47,12 @@ from app.utils.morphology_tags import (  # noqa: E402
 DATA = REPO / "apps" / "api" / "data"
 OUT = REPO / "apps" / "web" / "public" / "data" / "v1"
 
-# سقف الحجم الخام لشجرة البيانات. تجاوزه خطأ بناء لا مفاجأة إنتاج:
-# المقيس اليوم 13,796,442 بايتًا في 240 ملفًا.
-RAW_BUDGET = 30 * 1024 * 1024
+# سقف الحجم الخام لشجرة البيانات. تجاوزه خطأ بناء لا مفاجأة إنتاج.
+# رُفع من 30MB إلى 64MB مع دخول متون المعاجم الأربعة (قرار المالك
+# 2026-08-01): المقيس بعدها ≈ 46.7MB، والهامش يكشف الانفجار غير المقصود
+# ويبقى دون سقف out/ في سير النشر (100MB) بمسافة أمان. والقارئ لا يجلب
+# الشجرة كلها: مواد المعاجم شظايا بالجذر تُجلب مادةً مادة.
+RAW_BUDGET = 64 * 1024 * 1024
 
 files: dict[str, str] = {}
 
@@ -207,14 +210,40 @@ def main() -> None:
         sihah_roots = sorted(sihah["entries"])
         assert len(sihah_roots) == sihah_meta["entries_published"]
 
+    # ---------- 5-ج) متون المعاجم الكلاسيكية الثلاثة (قرار المالك 2026-07-31) ----------
+    # الصحاح للجوهري (ت٣٩٣هـ) ومقاييس اللغة لابن فارس (ت٣٩٥هـ) والمفردات
+    # للراغب (ت٥٠٢هـ): يُنشر **المتن الكلاسيكي وحده** — وهو ملك مؤلفيه
+    # الأقدمين — ويُستبعد جهاز المحقِّق المعاصر كلُّه، ويُعرض الإسناد
+    # كاملًا (المحقق والناشر والطبعة والمصدر الرقمي والبصمة). التفصيل
+    # والحجة: docs/audits/OPENITI_MATN_DECISION.md
+    openiti_path = DATA / "openiti_lexicon.json.gz"
+    openiti_meta: dict | None = None
+    openiti_roots: list[str] = []
+    if openiti_path.exists():
+        with gzip.open(openiti_path, "rt", encoding="utf-8") as handle:
+            openiti = json.load(handle)
+        openiti_meta = openiti["meta"]
+        # شظية لكل جذر لا لكل حرف: مادة لسان العرب وحدها قد تبلغ عشرات
+        # الكيلوبايتات، وشظية الحرف تجمع عشرات المواد فتثقل على الهاتف.
+        # والقارئ في صفحة جذرٍ واحد — فيجلب مادته وحدها.
+        for root_key, per_book in openiti["entries"].items():
+            assert root_key in roots, f"مادة لجذر ليس عندنا: {root_key}"
+            name = "-".join(f"{ord(ch):04x}" for ch in root_key)
+            write(f"lexicon/openiti/{name}.json", per_book)
+        openiti_roots = sorted(openiti["entries"])
+        assert len(openiti_roots) == openiti_meta["roots_covered"]
+
     write(
         "lexicon.json",
         {
-            "state": "partial" if sihah_roots else "no_text",
+            "state": "partial" if (sihah_roots or openiti_roots) else "no_text",
             "scheme": "lexicon_entry",
             "entry_count": len(roots),
             "with_text": sihah_roots,
             "sihah": sihah_meta,
+            # متون الكتب الثلاثة — لكل جذرٍ مغطًّى شظيتُه في lexicon/openiti/
+            "openiti": openiti_meta,
+            "with_text_openiti": openiti_roots,
             "lane": None,
             "reason": (
                 "لم يجتز أيُّ معجمٍ عربيٍّ رقميّ متداول شرطَ «الكتاب + "

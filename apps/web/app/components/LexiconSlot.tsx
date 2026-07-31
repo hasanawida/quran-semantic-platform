@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 
 import {
   getLexicon,
+  openitiEntry,
   sihahEntry,
   type Lexicon,
+  type OpenitiEntry,
   type SihahEntry,
 } from "../lib/staticdata";
+
+/** ترتيب عرض الكتب الأربعة: بوفاة المؤلف — زمنيٌّ لا تفضيليّ (ADR-013). */
+const OPENITI_ORDER = ["sihah_jawhari", "maqayis", "mufradat", "lisan"] as const;
 
 /**
  * المادة المعجمية: **موضعٌ مفتوحٌ ومتنٌ غير مُدخَل**.
@@ -23,6 +28,7 @@ import {
 export function LexiconSlot({ roots }: { roots: string[] }) {
   const [lexicon, setLexicon] = useState<Lexicon | null>(null);
   const [entries, setEntries] = useState<Record<string, SihahEntry>>({});
+  const [classic, setClassic] = useState<Record<string, OpenitiEntry>>({});
 
   useEffect(() => {
     getLexicon().then(setLexicon).catch(() => setLexicon(null));
@@ -48,8 +54,26 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
     };
   }, [key]);
 
+  // متون الكتب الثلاثة (§٢٠): متنٌ كلاسيكي مستورد، مسندٌ لا مُراجَع
+  useEffect(() => {
+    if (!key) return;
+    let live = true;
+    Promise.all(
+      key.split("|").map(async (root) => [root, await openitiEntry(root)] as const)
+    ).then((pairs) => {
+      if (!live) return;
+      const next: Record<string, OpenitiEntry> = {};
+      for (const [root, entry] of pairs) if (entry) next[root] = entry;
+      setClassic(next);
+    });
+    return () => {
+      live = false;
+    };
+  }, [key]);
+
   if (!lexicon || unique.length === 0) return null;
   const sihah = lexicon.sihah;
+  const openiti = lexicon.openiti;
 
   return (
     <section className="lexicon-slot" aria-labelledby="lex-head">
@@ -57,6 +81,7 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
 
       {unique.map((root) => {
         const entry = entries[root];
+        const classicEntry = classic[root];
         return (
           <div key={root} className="lex-entry-block">
             <p className="lex-entry">
@@ -77,6 +102,10 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
                     : entry.review === "agent"
                       ? "راجعها وكيلٌ آلي مستقل — قيد مراجعة المالك"
                       : "نُسخت آليًّا — قيد المراجعة"}
+                </span>
+              ) : classicEntry ? (
+                <span className="lex-state pending-review">
+                  متونٌ كلاسيكية مستوردة — غير مراجَعة
                 </span>
               ) : (
                 <span className="lex-state">المتن غير مُدخَل</span>
@@ -103,6 +132,36 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
                 </p>
               </article>
             )}
+            {/* متون الكتب الثلاثة (§٢٠): المتن كلاسيكيٌّ خالص، وجهاز
+                المحقِّق مستبعَد، والإسناد كامل — والحال «مستورد» تُعرض
+                ولا يُدَّعى فوقها. */}
+            {classicEntry &&
+              openiti &&
+              OPENITI_ORDER.filter((book) => classicEntry[book]).map((book) => {
+                const meta = openiti.books[book];
+                return classicEntry[book].map((record, i) => (
+                  <article className="sihah-entry openiti-entry" key={`${book}-${i}`}>
+                    <p className="sihah-text" lang="ar">
+                      {record.text}
+                    </p>
+                    <p className="sihah-provenance">
+                      {meta.title} — {meta.author} (ت{meta.author_died_hijri}هـ)
+                      {record.page ? ` · ${record.page}` : ""} · نصُّ طبعة{" "}
+                      {meta.editor} · {meta.publisher}
+                      {meta.edition ? ` · ${meta.edition}` : ""} ·{" "}
+                      <a
+                        href={meta.source_url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        المصدر الرقمي (OpenITI)
+                      </a>{" "}
+                      · متنٌ كلاسيكي مستورد آليًّا — جهاز المحقِّق مستبعَد،
+                      والنسبةُ إقرارٌ بالمصدر لا إذنٌ منه
+                    </p>
+                  </article>
+                ));
+              })}
           </div>
         );
       })}
@@ -113,6 +172,12 @@ export function LexiconSlot({ roots }: { roots: string[] }) {
           راجع المالكُ {sihah.pages.reviewed} منها — والباقي منشورٌ
           بوسم «قيد المراجعة» بقرار المالك (2026-07-30)، ويُصحَّح فور
           مراجعته.
+        </p>
+      )}
+      {openiti && (
+        <p className="notice-inline">
+          متون الكتب الثلاثة تغطي {openiti.roots_covered} من{" "}
+          {openiti.roots_total} جذرًا قرآنيًّا — {openiti.statement}
         </p>
       )}
       <p className="notice-inline">{lexicon.reason}</p>

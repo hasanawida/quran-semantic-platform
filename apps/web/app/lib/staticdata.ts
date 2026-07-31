@@ -713,6 +713,22 @@ export async function lookupWord(query: string, offset = 0, limit = 20) {
 }
 
 // ---------- المواد المعجمية: مواضع بلا متون ----------
+/** إسنادُ كتابٍ من المتون الكلاسيكية الثلاثة — كما سجّلته ترويسة ملفه. */
+export type OpenitiBook = {
+  title: string;
+  author: string;
+  author_died_hijri: string;
+  editor: string;
+  publisher: string;
+  edition: string;
+  openiti_uri: string;
+  source_url: string;
+  sha256: string;
+  apparatus: string;
+  entries_matched: number;
+  entries_unmatched_roots: number;
+};
+
 export type Lexicon = {
   state: "no_text";
   scheme: string;
@@ -729,6 +745,16 @@ export type Lexicon = {
     pages: { transcribed: number; reviewed: number; pending: string[] };
     entries_published: number;
   } | null;
+  /** متون المعاجم الكلاسيكية الثلاثة (قرار المالك 2026-07-31 — §٢٠). */
+  openiti: {
+    decision: string;
+    statement: string;
+    review_status: string;
+    books: Record<string, OpenitiBook>;
+    roots_covered: number;
+    roots_total: number;
+  } | null;
+  with_text_openiti: string[];
   reason: string;
   audit: string;
   sources: { name: string; url: string; licence: string; status: string; note: string }[];
@@ -781,6 +807,32 @@ export async function sihahEntry(root: string): Promise<SihahEntry | null> {
       `lexicon/sihah/${shard}.json`
     );
     return data[key] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** مادةٌ من متون الكتب الثلاثة: رأسها كما في المصدر، ومتنها، وموضعها. */
+export type OpenitiRecord = { head: string; text: string; page?: string };
+/** مواد الجذر مفهرسة بمفتاح الكتاب (sihah_jawhari | maqayis | mufradat). */
+export type OpenitiEntry = Record<string, OpenitiRecord[]>;
+
+/**
+ * متون المعاجم الكلاسيكية الثلاثة لجذرٍ بعينه — أو null إن لم يغطِّه كتاب.
+ *
+ * المتن كلاسيكيٌّ خالص وجهاز المحقِّق مستبعَد (§٢٠)، والحال `imported`
+ * أبدًا — فالعرض يسند ولا يدّعي مراجعة.
+ */
+export async function openitiEntry(root: string): Promise<OpenitiEntry | null> {
+  const key = root.replace(/\s+/g, "");
+  if (!key) return null;
+  // شظيةٌ لكل جذر: مادة اللسان قد تبلغ عشرات الكيلوبايتات، فلا يُحمَّل
+  // القارئ إلا مادةَ الجذر الذي بين يديه
+  const name = [...key]
+    .map((ch) => ch.codePointAt(0)!.toString(16).padStart(4, "0"))
+    .join("-");
+  try {
+    return await loadJson<OpenitiEntry>(`lexicon/openiti/${name}.json`);
   } catch {
     return null;
   }

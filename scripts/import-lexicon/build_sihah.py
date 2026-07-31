@@ -140,7 +140,8 @@ def segment_run(run: list[dict]) -> list[dict]:
 
 
 def main() -> None:
-    files = sorted(PAGES_DIR.glob("n*.md"))
+    # صفحاتُ النسخ وحدها: `n*.md` كان يبتلع أيَّ ملفٍّ آخر في المجلد
+    files = sorted(PAGES_DIR.glob("n[0-9]*.md"))
     if not files:
         raise SystemExit(f"لا ملفات نسخ في {PAGES_DIR}")
     pages = [parse_page(f) for f in files]

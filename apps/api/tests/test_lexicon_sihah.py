@@ -21,11 +21,13 @@ PAGES = REPO / "data" / "transcriptions" / "mukhtar-sihah-1920"
 OUT = REPO / "apps" / "web" / "public" / "data" / "v1"
 
 ARCHIVE_ID = "AAlexandrina-196404"
+# صفحاتُ النسخ وحدها: `n*.md` كان يبتلع أيَّ ملفٍّ آخر في المجلد فيتحطّم
+PAGE_FILE = "n[0-9]*.md"
 
 
 def _page_headers() -> dict[str, dict[str, str]]:
     headers: dict[str, dict[str, str]] = {}
-    for path in PAGES.glob("n*.md"):
+    for path in PAGES.glob(PAGE_FILE):
         _, header, _ = path.read_text(encoding="utf-8").split("---", 2)
         fields = {}
         for line in header.strip().splitlines():
@@ -135,7 +137,7 @@ def test_published_shards_equal_the_bundle(bundle):
 def test_transcription_bodies_use_the_head_convention():
     """رؤوس المواد `* ج م ع` — انحرافُ الاصطلاح يُفقد البنّاء موادَّ صامتًا."""
     head = re.compile(r"^\* [ء-ي](?: [ء-ي]){1,4}\s*$", re.M)
-    for path in PAGES.glob("n*.md"):
+    for path in PAGES.glob(PAGE_FILE):
         _, _, body = path.read_text(encoding="utf-8").split("---", 2)
         # كل سطر يبدأ بنجمة يجب أن يطابق الاصطلاح تمامًا
         for line in body.splitlines():
