@@ -326,10 +326,10 @@ export default function AyahAnalysisPage() {
                   {tafsirMeta.further_reading?.length > 0 && (
                     <details className="lex-details">
                       <summary>
-                        <span className="lex-book-title">للاستزادة</span>
+                        <span className="lex-book-title">كتبٌ لم تُدخَل</span>
                         <span className="lex-book-info">
                           {tafsirMeta.further_reading.length} تفاسير معاصرة —
-                          إحالة بلا نقل
+                          إحالة بإسنادها
                         </span>
                       </summary>
                       <ul className="lex-refs">

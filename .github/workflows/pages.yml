@@ -99,10 +99,13 @@ jobs:
           BYTES=$(du -sb apps/web/out | cut -f1)
           FILES=$(find apps/web/out -type f | wc -l)
           echo "out/ = $BYTES bytes in $FILES files"
-          # المقيس اليوم ≈ 22 م.ب في ≈ 500 ملف. السقف 100 م.ب يترك
-          # هامشًا واسعًا ويكشف أي عودة إلى التوليد الشامل فورًا.
-          test "$BYTES" -lt 104857600
-          test "$FILES" -lt 3000
+          # المقيس بعد دخول المعاجم الأربعة وتفاسير الخمسة:
+          # ≈ 90 م.ب في ≈ 2800 ملف. رُفع السقف إلى 160 م.ب و6000 ملف
+          # ليتسع للنمو المعلوم ويبقى كاشفًا للانفجار غير المقصود.
+          # والقارئ لا يجلب هذا كلَّه: التفسير مشظًّى بالكتاب والسورة،
+          # والمعاجم بالجذر، فلا يُحمَّل إلا ما يفتحه.
+          test "$BYTES" -lt 167772160
+          test "$FILES" -lt 6000
           test -f apps/web/out/data/v1/manifest.json
           test -f apps/web/out/mushaf/114/index.html
           test -f apps/web/out/404.html
