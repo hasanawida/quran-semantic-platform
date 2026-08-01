@@ -246,116 +246,6 @@ export default function AyahAnalysisPage() {
             </p>
           )}
 
-          <ol className="word-list">
-            {data.words
-              .filter((w) => selected === null || w.word_number === selected)
-              .map((word) => (
-                <li key={word.word_number} className="word-card">
-                  <div className="word-card-head">
-                    <span className="word-index">{word.word_number}</span>
-                    <bdi className="word-surface" lang="ar">
-                      {word.surface_text}
-                    </bdi>
-                    {/* الوسم للخبر لا للضجيج: «مصدر واحد» مع كل كلمة لا
-                        يخبر شيئا — يبقى وسم الخلاف وغياب التحليل وما
-                        يحمل قرارا، فيبرز المهم بدل أن يغرق في المكرر */}
-                    {word.root_agreement !== "single_source" &&
-                      word.root_agreement !== "no_root" && (
-                        <span
-                          className={`agreement-tag agreement-${word.root_agreement}`}
-                        >
-                          {AGREEMENT_LABELS[word.root_agreement]}
-                        </span>
-                      )}
-                  </div>
-
-                  {word.decision && (
-                    <p className="decision-note">
-                      <strong>
-                        {DECISION_LABELS[word.decision.status] ??
-                          word.decision.status}
-                        :
-                      </strong>{" "}
-                      {word.decision.rationale}
-                    </p>
-                  )}
-
-                  {Object.entries(word.analyses_by_source).map(
-                    ([source, segments], _, allSources) => (
-                      <div key={source} className="source-block">
-                        {/* اسم المصدر مع الكلمة لا يذكر إلا عند تعدد
-                            المصادر — والمصدر الواحد مذكور رأس الصفحة */}
-                        {allSources.length > 1 && (
-                          <p className="source-name">المصدر: {source}</p>
-                        )}
-                        <table className="segment-table">
-                          <thead>
-                            <tr>
-                              <th>المقطع</th>
-                              <th>القسم</th>
-                              <th>الأصل</th>
-                              <th>الجذر</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {segments.map((segment) => (
-                              <tr key={segment.segment_number}>
-                                <td data-label="المقطع">{segment.segment_number}</td>
-                                <td data-label="القسم">{segment.pos_label ?? segment.tag}</td>
-                                <td lang="ar" data-label="الأصل">
-                                  {segment.lemma ? (
-                                    <bdi>{segment.lemma}</bdi>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
-                                <td lang="ar" data-label="الجذر">
-                                  {segment.root ? (
-                                    <Link
-                                      href={`/root?r=${encodeURIComponent(
-                                        segment.root
-                                      )}`}
-                                    >
-                                      <bdi>{segment.root}</bdi>
-                                    </Link>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {/* السمات الخام بحروفها اللاتينية علم لأهله لا
-                            لمسار القراءة — خلف طية، ولا تحذف: هي نص
-                            المصدر الذي يسند كل ما في الجدول */}
-                        <details className="lex-details features-details">
-                          <summary>
-                            <span className="lex-book-info">
-                              السمات كما في المصدر ({source})
-                            </span>
-                          </summary>
-                          <ul className="features-raw">
-                            {segments.map((segment) => (
-                              <li key={segment.segment_number}>
-                                <code dir="ltr">{segment.features}</code>
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      </div>
-                    )
-                  )}
-
-                  {Object.keys(word.analyses_by_source).length === 0 && (
-                    <p className="unlinked-note">
-                      لا يوجد تحليل مستورد لهذه الكلمة بعد.
-                    </p>
-                  )}
-                </li>
-              ))}
-          </ol>
-
           {/* التفسير (§٢٠): مقاطع كلاسيكية مطوية، مداها من ارقام ايات
               المطبوع، وحارس المطابقة يثبت الربط او يسمه صراحة */}
           {ref &&
@@ -470,6 +360,125 @@ export default function AyahAnalysisPage() {
               );
             })()}
 
+          {/* التحليل كلمة كلمة بعد المعنى: القارئ يطلب المعنى اولا،
+              وقائمة الكلمات تفصيل يليه لا يسبقه */}
+          <h2 className="slot-head">
+            <span>التحليل الصرفي كلمةً كلمة</span>
+            <span className="lex-state">
+              {selected === null
+                ? "اضغط كلمةً في الآية لعرضها وحدها"
+                : "معروضة كلمة واحدة — اضغطها ثانيةً لعرض الكل"}
+            </span>
+          </h2>
+          <ol className="word-list">
+            {data.words
+              .filter((w) => selected === null || w.word_number === selected)
+              .map((word) => (
+                <li key={word.word_number} className="word-card">
+                  <div className="word-card-head">
+                    <span className="word-index">{word.word_number}</span>
+                    <bdi className="word-surface" lang="ar">
+                      {word.surface_text}
+                    </bdi>
+                    {/* الوسم للخبر لا للضجيج: «مصدر واحد» مع كل كلمة لا
+                        يخبر شيئا — يبقى وسم الخلاف وغياب التحليل وما
+                        يحمل قرارا، فيبرز المهم بدل أن يغرق في المكرر */}
+                    {word.root_agreement !== "single_source" &&
+                      word.root_agreement !== "no_root" && (
+                        <span
+                          className={`agreement-tag agreement-${word.root_agreement}`}
+                        >
+                          {AGREEMENT_LABELS[word.root_agreement]}
+                        </span>
+                      )}
+                  </div>
+
+                  {word.decision && (
+                    <p className="decision-note">
+                      <strong>
+                        {DECISION_LABELS[word.decision.status] ??
+                          word.decision.status}
+                        :
+                      </strong>{" "}
+                      {word.decision.rationale}
+                    </p>
+                  )}
+
+                  {Object.entries(word.analyses_by_source).map(
+                    ([source, segments], _, allSources) => (
+                      <div key={source} className="source-block">
+                        {/* اسم المصدر مع الكلمة لا يذكر إلا عند تعدد
+                            المصادر — والمصدر الواحد مذكور رأس الصفحة */}
+                        {allSources.length > 1 && (
+                          <p className="source-name">المصدر: {source}</p>
+                        )}
+                        <table className="segment-table">
+                          <thead>
+                            <tr>
+                              <th>المقطع</th>
+                              <th>القسم</th>
+                              <th>الأصل</th>
+                              <th>الجذر</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {segments.map((segment) => (
+                              <tr key={segment.segment_number}>
+                                <td data-label="المقطع">{segment.segment_number}</td>
+                                <td data-label="القسم">{segment.pos_label ?? segment.tag}</td>
+                                <td lang="ar" data-label="الأصل">
+                                  {segment.lemma ? (
+                                    <bdi>{segment.lemma}</bdi>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
+                                <td lang="ar" data-label="الجذر">
+                                  {segment.root ? (
+                                    <Link
+                                      href={`/root?r=${encodeURIComponent(
+                                        segment.root
+                                      )}`}
+                                    >
+                                      <bdi>{segment.root}</bdi>
+                                    </Link>
+                                  ) : (
+                                    "—"
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {/* السمات الخام بحروفها اللاتينية علم لأهله لا
+                            لمسار القراءة — خلف طية، ولا تحذف: هي نص
+                            المصدر الذي يسند كل ما في الجدول */}
+                        <details className="lex-details features-details">
+                          <summary>
+                            <span className="lex-book-info">
+                              السمات كما في المصدر ({source})
+                            </span>
+                          </summary>
+                          <ul className="features-raw">
+                            {segments.map((segment) => (
+                              <li key={segment.segment_number}>
+                                <code dir="ltr">{segment.features}</code>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      </div>
+                    )
+                  )}
+
+                  {Object.keys(word.analyses_by_source).length === 0 && (
+                    <p className="unlinked-note">
+                      لا يوجد تحليل مستورد لهذه الكلمة بعد.
+                    </p>
+                  )}
+                </li>
+              ))}
+          </ol>
           {/* بيان واحد آخر الصفحة — كان يطبع مرتين متتاليتين */}
           <div className="status-box notice">
             <p>
