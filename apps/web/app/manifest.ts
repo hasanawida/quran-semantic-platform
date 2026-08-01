@@ -21,8 +21,9 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: "rtl",
     lang: "ar",
     categories: ["education", "books", "reference"],
-    background_color: "#faf9f5",
-    theme_color: "#1d5c42",
+    // ألوان الهوية المعتمدة (2026-08-01) — تطابق رموز globals.css
+    background_color: "#f7f5ef",
+    theme_color: "#0d5c46",
     icons: [
       { src: `${BASE}/icon.svg`, sizes: "any", type: "image/svg+xml" },
       { src: `${BASE}/icon-192.png`, sizes: "192x192", type: "image/png" },

@@ -1,6 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#1d5c42"/>
-  <path d="M18 46.5A4.5 4.5 0 0 1 22.5 42H46" fill="none" stroke="#faf9f5" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M22.5 14H46v32H22.5a4.5 4.5 0 0 1-4.5-4.5v-23a4.5 4.5 0 0 1 4.5-4.5z" fill="none" stroke="#faf9f5" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="33" cy="28" r="3" fill="#faf9f5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img"
+     aria-label="شعار منصة الاستقراء الدلالي">
+  <title>الاستقراء الدلالي</title>
+  <desc>نجمة ثمانية إسلامية بإطار ذهبي، في وسطها مصحف مفتوح تخرج من أسفله جذور متفرعة — الجذر وما تفرع عنه من ألفاظ.</desc>
+
+  <defs>
+    <linearGradient id="qspGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#12654C"/>
+      <stop offset="1" stop-color="#0A4433"/>
+    </linearGradient>
+    <linearGradient id="qspGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F0D68A"/>
+      <stop offset="0.5" stop-color="#D9B872"/>
+      <stop offset="1" stop-color="#B48A3C"/>
+    </linearGradient>
+    <linearGradient id="qspPage" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EFEADA"/>
+    </linearGradient>
+    <radialGradient id="qspGlow" cx="0.5" cy="0.42" r="0.5">
+      <stop offset="0" stop-color="#FFF6DC" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFF6DC" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- النجمة الثمانية: مربعان متقاطعان (رُبع الحزب) -->
+  <g>
+    <rect x="106" y="106" width="300" height="300" rx="10" fill="url(#qspGreen)"/>
+    <rect x="106" y="106" width="300" height="300" rx="10" fill="url(#qspGreen)"
+          transform="rotate(45 256 256)"/>
+    <!-- الإطاران الذهبيان: خارجي على حرف النجمة، وداخلي مربع -->
+    <rect x="106" y="106" width="300" height="300" rx="10" fill="none"
+          stroke="url(#qspGold)" stroke-width="9"/>
+    <rect x="106" y="106" width="300" height="300" rx="10" fill="none"
+          stroke="url(#qspGold)" stroke-width="9" transform="rotate(45 256 256)"/>
+    <rect x="150" y="150" width="212" height="212" rx="6" fill="none"
+          stroke="url(#qspGold)" stroke-width="5" opacity="0.9"/>
+  </g>
+
+  <!-- وهج خفيف خلف المصحف -->
+  <circle cx="256" cy="205" r="112" fill="url(#qspGlow)"/>
+
+  <!-- المصحف المفتوح: صفحتان يفصلهما ثنيٌ في الوسط. موضعه أعلى
+       التكوين ليفسح للجذور تحته داخل حدود المربع -->
+  <g>
+    <path d="M256 188 C232 172 206 166 176 166 L176 248 C206 248 232 254 256 270 Z"
+          fill="url(#qspPage)"/>
+    <path d="M256 188 C280 172 306 166 336 166 L336 248 C306 248 280 254 256 270 Z"
+          fill="url(#qspPage)"/>
+    <path d="M256 188 V270" stroke="#B48A3C" stroke-width="4" stroke-linecap="round"/>
+    <path d="M256 188 C232 172 206 166 176 166 L176 248 C206 248 232 254 256 270
+             C280 254 306 248 336 248 L336 166 C306 166 280 172 256 188 Z"
+          fill="none" stroke="url(#qspGold)" stroke-width="7" stroke-linejoin="round"/>
+  </g>
+
+  <!-- الجذور: أصلٌ واحد تتفرع منه ستة فروع تنتشر داخل المربع — قلب
+       العلامة، فلا تضمُر عند طرف النجمة -->
+  <g fill="none" stroke="url(#qspGold)" stroke-linecap="round">
+    <path d="M256 270 V300" stroke-width="10"/>
+    <path d="M256 300 C256 318 206 322 176 344" stroke-width="7"/>
+    <path d="M256 300 C256 318 306 322 336 344" stroke-width="7"/>
+    <path d="M256 300 C256 324 214 344 198 376" stroke-width="7"/>
+    <path d="M256 300 C256 324 298 344 314 376" stroke-width="7"/>
+    <path d="M256 300 C256 330 242 356 236 392" stroke-width="7"/>
+    <path d="M256 300 C256 330 270 356 276 392" stroke-width="7"/>
+    <path d="M256 300 V386" stroke-width="7"/>
+  </g>
 </svg>

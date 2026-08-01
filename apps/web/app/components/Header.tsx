@@ -10,31 +10,70 @@ const STATIC = process.env.NEXT_PUBLIC_QSP_STATIC === "1";
 
 import { useAuth } from "../lib/auth";
 
-/** علامة المنصة: صفحة مصحف مجردة تتفرع منها ثلاثة فروع من اصل واحد —
- *  الجذر ومشتقاته. رسم خطي هادئ يصلح ايقونة، لا زخرفة. */
+/** علامة المنصة المعتمدة (2026-08-01): نجمة ثمانية بإطار ذهبي، في
+ *  وسطها مصحف مفتوح تخرج من أسفله جذور متفرعة — الجذر وما تفرع عنه.
+ *  رسمٌ متجه لا صورة: الاسم يبقى نصًّا صحيح الإملاء يقرؤه قارئ الشاشة،
+ *  والرسم لا يبهت عند التكبير. والأصل الكامل في app/icon.svg. */
 function RootMark() {
   return (
-    <svg
-      width="30"
-      height="30"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M5 3h11a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5z" />
-      <path d="M5 3v18" />
-      {/* الاصل الواحد وفروعه الثلاثة */}
-      <path d="M12 17v-4" />
-      <path d="M12 13c0-2.2-2.4-2.6-2.4-4.6" />
-      <path d="M12 13c0-2.2 2.4-2.6 2.4-4.6" />
-      <path d="M12 13V7.5" />
-      <circle cx="9.6" cy="7.6" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="6.7" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="14.4" cy="7.6" r="0.9" fill="currentColor" stroke="none" />
+    <svg width="34" height="34" viewBox="0 0 512 512" aria-hidden="true">
+      <defs>
+        <linearGradient id="hdGold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#F0D68A" />
+          <stop offset="0.5" stopColor="#D9B872" />
+          <stop offset="1" stopColor="#B48A3C" />
+        </linearGradient>
+      </defs>
+      <rect x="106" y="106" width="300" height="300" rx="10" fill="#0D5C46" />
+      <rect
+        x="106"
+        y="106"
+        width="300"
+        height="300"
+        rx="10"
+        fill="#0D5C46"
+        transform="rotate(45 256 256)"
+      />
+      <rect
+        x="106"
+        y="106"
+        width="300"
+        height="300"
+        rx="10"
+        fill="none"
+        stroke="url(#hdGold)"
+        strokeWidth="13"
+      />
+      <rect
+        x="106"
+        y="106"
+        width="300"
+        height="300"
+        rx="10"
+        fill="none"
+        stroke="url(#hdGold)"
+        strokeWidth="13"
+        transform="rotate(45 256 256)"
+      />
+      {/* المصحف المفتوح — الإحداثيات نفسها التي في app/icon.svg */}
+      <path
+        d="M256 188 C232 172 206 166 176 166 L176 248 C206 248 232 254 256 270
+           C280 254 306 248 336 248 L336 166 C306 166 280 172 256 188 Z"
+        fill="#F7F5EF"
+        stroke="url(#hdGold)"
+        strokeWidth="10"
+        strokeLinejoin="round"
+      />
+      <path d="M256 188 V270" stroke="#B48A3C" strokeWidth="6" />
+      {/* الجذور: أصلٌ واحد تتفرع منه ستة فروع */}
+      <g fill="none" stroke="url(#hdGold)" strokeWidth="10" strokeLinecap="round">
+        <path d="M256 270 V300" />
+        <path d="M256 300 C256 318 206 322 176 344" />
+        <path d="M256 300 C256 318 306 322 336 344" />
+        <path d="M256 300 C256 324 214 344 198 376" />
+        <path d="M256 300 C256 324 298 344 314 376" />
+        <path d="M256 300 V386" />
+      </g>
     </svg>
   );
 }
