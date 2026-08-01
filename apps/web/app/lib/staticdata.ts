@@ -835,6 +835,8 @@ export type TafsirWork = {
   source_url: string;
   sha256: string;
   apparatus: string;
+  /** تحفظات المصدر إن وجدت (مثل MISSING_PARTS) — تعرض ولا تطمس */
+  notes: string;
   passages: number;
   anchored: number;
 };
@@ -859,12 +861,13 @@ export type TafsirPassage = {
 
 export const getTafsirMeta = () => loadJson<TafsirMeta>("tafsir.json");
 
-/** مقاطع تفسير السورة كلها — تجلب مرة وتخدم كل اياتها. */
+/** مقاطع كتابٍ في سورة — تجلب مرة وتخدم كل اياتها. */
 export async function tafsirSurah(
+  work: string,
   surah: number
 ): Promise<TafsirPassage[] | null> {
   try {
-    return await loadJson<TafsirPassage[]>(`tafsir/${surah}.json`);
+    return await loadJson<TafsirPassage[]>(`tafsir/${work}/${surah}.json`);
   } catch {
     return null;
   }

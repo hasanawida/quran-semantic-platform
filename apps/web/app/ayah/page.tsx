@@ -137,15 +137,20 @@ export default function AyahAnalysisPage() {
   const [tafsir, setTafsir] = useState<TafsirPassage[] | null>(null);
   const [tafsirMeta, setTafsirMeta] = useState<TafsirMeta | null>(null);
 
-  // مقاطع تفسير السورة (§٢٠): تجلب مرة لكل سورة، والاية تلتقط مقطعها
+  // مقاطع التفسير (§٢٠): يُقرأ البيان اولا لتعرف الكتب، ثم تجلب شظية
+  // كل كتاب لهذه السورة — والاية تلتقط مقطعها منها
   useEffect(() => {
     if (!ref) return;
     let live = true;
-    Promise.all([tafsirSurah(ref.surah), getTafsirMeta()])
-      .then(([passages, info]) => {
+    getTafsirMeta()
+      .then(async (info) => {
         if (!live) return;
-        setTafsir(passages);
         setTafsirMeta(info);
+        const parts = await Promise.all(
+          Object.keys(info.works).map((work) => tafsirSurah(work, ref.surah))
+        );
+        if (!live) return;
+        setTafsir(parts.filter(Boolean).flat() as TafsirPassage[]);
       })
       .catch(() => undefined);
     return () => {
@@ -357,13 +362,24 @@ export default function AyahAnalysisPage() {
             tafsir &&
             tafsirMeta &&
             (() => {
-              const here = tafsir.filter(
-                (p) => p.ayah_start <= ref.ayah && ref.ayah <= p.ayah_end
-              );
+              // ترتيب المفسرين بوفاة المؤلف — زمني لا تفضيلي (ADR-013)
+              const here = tafsir
+                .filter((p) => p.ayah_start <= ref.ayah && ref.ayah <= p.ayah_end)
+                .sort((a, b) => {
+                  const died = (w: string) =>
+                    Number(tafsirMeta.works[w]?.author_died_hijri ?? 9999);
+                  return died(a.work) - died(b.work);
+                });
               if (here.length === 0) return null;
               return (
                 <section className="lexicon-slot" aria-labelledby="tafsir-head">
-                  <h2 id="tafsir-head">التفسير</h2>
+                  <h2 id="tafsir-head" className="slot-head">
+                    <span>التفسير</span>
+                    <span className="lex-state has-text">
+                      {here.length} {here.length > 2 ? "تفاسير" : "تفسير"} — افتح
+                      ما تشاء
+                    </span>
+                  </h2>
                   {here.map((passage, i) => {
                     const work = tafsirMeta.works[passage.work];
                     if (!work) return null;
@@ -372,8 +388,13 @@ export default function AyahAnalysisPage() {
                         <summary>
                           <span className="lex-book-title">{work.title}</span>
                           <span className="lex-book-info">
-                            {work.author.split("،")[0]} (ت
-                            {work.author_died_hijri}هـ) · الآيات{" "}
+                            {/* اسم المؤلف مختصرا: المصدر يذيله بوفاته
+                                بين قوسين ونحن نعرضها موحدة بعده */}
+                            {work.author
+                              .split("(")[0]
+                              .split("،")[0]
+                              .trim()}{" "}
+                            (ت{work.author_died_hijri}هـ) · الآيات{" "}
                             {passage.ayah_start}
                             {passage.ayah_end > passage.ayah_start
                               ? `–${passage.ayah_end}`
@@ -403,6 +424,7 @@ export default function AyahAnalysisPage() {
                             {passage.anchored
                               ? "الربط بالآية مثبَت بمطابقة اقتباس المطبوع بنص المصحف"
                               : "رُبط بترتيب المطبوع وأرقام آياته — ولم تثبت المطابقة الآلية لاقتباسه"}
+                            {work.notes ? ` · ${work.notes}` : ""}
                           </p>
                         </article>
                       </details>

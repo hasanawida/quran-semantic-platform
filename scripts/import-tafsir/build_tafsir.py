@@ -65,12 +65,42 @@ WORKS = [
             "أرقام إحالات الحواشي مجرَّدة ومعقوفات الإثبات منزوعة القوسين "
             "عندنا — نصوص حواشي المحقِّقين غير منقولة في ملف المصدر أصلًا"
         ),
+        "notes": "",
+    },
+    {
+        "key": "ibn_kathir",
+        "file": "ibnkathir.Shamela0008473.txt",
+        "openiti_uri": "0774IbnKathir.TafsirQuran.Shamela0008473-ara1",
+        "source_url": (
+            f"{GITHUB}/0775AH/master/data/0774IbnKathir/"
+            "0774IbnKathir.TafsirQuran/"
+            "0774IbnKathir.TafsirQuran.Shamela0008473-ara1.mARkdown"
+        ),
+        "apparatus": (
+            "أزالت OpenITI العناصر المصاحبة (Clean 2023)، وتُجرَّد عندنا "
+            "أرقامُ إحالات الحواشي ومعقوفاتُ الإثبات"
+        ),
+        # يُقال ما في المصدر ولا يُطمس: النسخة موسومة عندهم MISSING_PARTS
+        "notes": (
+            "نسخة المصدر موسومة عند OpenITI بـ MISSING_PARTS — مواضعُ "
+            "منها ساقطة، فغيابُ تفسيرِ آيةٍ هنا لا يعني أن المؤلف لم "
+            "يفسّرها. راجع الطبعة عند الحاجة."
+        ),
     },
 ]
 
-SURAH_HEAD = re.compile(r"^### \| ?(سورة .*)$", re.M)
-# اقتباسٌ رأسي: فقرة تبدأ بقوس معقوص وفي داخله أرقام آيات
-ANCHOR = re.compile(r"^# \{", re.M)
+# رأسُ السورة في المطبوعين على ثلاث صور: «سورة كذا»، و«تفسير سورة كذا»،
+# و«تفسير السورة التي يُذكر فيها كذا» — وقد يسبقها فراغٌ زائد أو وسمُ
+# موضعٍ (ms1234). والاسم المجرد («الأحزاب») يُقبل عند رأسٍ من الدرجة
+# الأولى `### |` وحدها، فلا تُلتقط عناوينُ الفصول الداخلية.
+SURAH_HEAD = re.compile(
+    r"^### \|(?P<deep>\|*)\s*(?:ms\d+\s*)?"
+    r"(?P<name>(?:تفسير\s+)?(?:سورة|سورتي|السورة التي يذكر فيها)?\s*[^{\n|]*)$",
+    re.M,
+)
+# المرساة: اقتباسٌ معقوص فيه أرقام آيات — إمّا فقرةً (البغوي) وإمّا في
+# سطر رأسٍ بنيوي (ابن كثير). الشكلان يُلتقطان بنمطٍ واحد.
+ANCHOR = re.compile(r"^(?:# |#+ \|+ ?)\{", re.M)
 PAGE = re.compile(r"PageV(\d+)P(\d+)")
 MILESTONE = re.compile(r"\s*ms\d+\s*")
 FOOTNOTE_REF = re.compile(r"\s*\(\d+\)")
@@ -92,14 +122,50 @@ def _skeleton(value: str) -> str:
     return normalize_arabic_search(value).translate(_WEAK_FORMS)
 
 
+# أسماء تسمّي بها المطبوعاتُ سورًا بغير اسمها المشهور — كلُّها مقروءة
+# من رؤوس المصدر نفسه لا من تخمين، والرقم ثابت لا يحتمل التباسًا.
+ALT_SURAH_NAMES: dict[str, int] = {
+    "القتال": 47,  # محمد
+    '"ن"': 68,  # القلم
+    "ن": 68,
+    "سأل سائل": 70,  # المعارج
+    "سبح": 87,  # الأعلى
+    "اقرأ": 96,  # العلق
+    "لم يكن": 98,  # البينة
+    "إذا زلزلت": 99,  # الزلزلة
+    "إذا جاء نصر الله والفتح": 110,  # النصر
+    "تبت": 111,  # المسد
+    "الدهر": 76,  # الإنسان
+    "بني إسرائيل": 17,  # الإسراء
+    "المطففين": 83,
+    # يجمع المطبوعُ سورتين في قسمٍ واحد؛ يُبدأ بالأولى وحارسُ المطابقة
+    # يفصل مقاطعَ الثانية عنها (انظر _pick_surah)
+    "المعوذتين": 113,
+}
+
+# أقسامٌ تجمع سورتين متتاليتين: الرقمُ فيها ابتداءٌ لا قطع
+COMBINED_HEADS = ("المعوذتين",)
+
+
 def _surah_number(head: str, keyed: dict[str, int], previous: int) -> int | None:
     """رقم السورة من اسمها في الرأس — والترتيب المصحفي حَكَمٌ مساند."""
     name = FOOTNOTE_REF.sub("", head)
-    name = re.sub(r"^سورة\s+", "", name).strip()
+    name = MILESTONE.sub(" ", name)
+    name = re.sub(r"^\s*تفسير\s+", "", name)
+    name = re.sub(
+        r"^\s*(?:سورتي|سورة|السورة التي يذكر فيها)\s+", "", name
+    ).strip()
     name = re.sub(r"\s*(مكية|مدنية).*$", "", name).strip()
+    if not name:
+        return None
+    if name in ALT_SURAH_NAMES:
+        return ALT_SURAH_NAMES[name]
     key = normalize_surah_name(name)
     if key in keyed:
         return keyed[key]
+    for alt_name, number in ALT_SURAH_NAMES.items():
+        if normalize_surah_name(alt_name) == key:
+            return number
     for candidate_key, number in keyed.items():
         if key.startswith(candidate_key) or candidate_key in key:
             # «فاتحة الكتاب» تبدأ بمفتاح «فاتحه»
@@ -172,35 +238,63 @@ def main() -> int:
             if match and match.group(2).strip() not in ("", "NODATA", "NOTGIVEN"):
                 meta_fields[match.group(1)] = match.group(2).strip()
 
-        surah_heads = list(SURAH_HEAD.finditer(matn))
-        current = 0
+        # تُحسم أرقامُ السور أولًا، ثم تُقطَّع الأقسام بين **المحسوم**
+        # منها وحده — فرأسٌ لا يدل على سورة (فصلٌ داخلي أو سطرٌ فارغ) لا
+        # يبتر قسم سورةٍ قبله. الاسم المجرد يُقبل في الرأس الأول وحده،
+        # وما دونه يشترط لفظ «سورة» صريحًا.
         parsed: list[dict] = []
         anchored_count = 0
         skipped_surahs: list[str] = []
-
-        for index, surah_match in enumerate(surah_heads):
-            end = (
-                surah_heads[index + 1].start()
-                if index + 1 < len(surah_heads)
-                else len(matn)
-            )
-            number = _surah_number(surah_match.group(1), keyed, current)
+        resolved: list[tuple[int, int, int, bool]] = []
+        current = 0
+        pending: list[tuple[int, int, bool]] = []
+        for surah_match in SURAH_HEAD.finditer(matn):
+            head = surah_match.group("name")
+            explicit = bool(re.match(r"\s*(?:تفسير\s+)?سور", head))
+            if surah_match.group("deep") and not explicit:
+                continue
+            number = _surah_number(head, keyed, current)
             if number is None or number <= current:
-                skipped_surahs.append(surah_match.group(1)[:40])
+                if head.strip():
+                    skipped_surahs.append(head.strip()[:40])
                 continue
             current = number
-            body = matn[surah_match.end() : end]
+            combined = any(word in head for word in COMBINED_HEADS)
+            pending.append((surah_match.end(), number, combined))
+        for index, (body_start, number, combined) in enumerate(pending):
+            end = (
+                pending[index + 1][0]
+                if index + 1 < len(pending)
+                else len(matn)
+            )
+            resolved.append((body_start, end, number, combined))
 
-            # المراسي: فقرات تفتتح بمعقوص فيه أرقام آيات
+        for body_start, end, head_number, combined in resolved:
+            body = matn[body_start:end]
+
+            # المراسي: اقتباس معقوص فيه أرقام آيات — يبدأ حيث تنتهي
+            # علامةُ السطر (`# ` أو `### || `) عند القوس نفسه
             anchors = []
             for anchor_match in ANCHOR.finditer(body):
-                close = body.find("}", anchor_match.start())
-                if close < 0:
+                open_brace = body.find("{", anchor_match.start())
+                close = body.find("}", open_brace)
+                if open_brace < 0 or close < 0:
                     continue
-                block = body[anchor_match.start() + 2 : close + 1]
-                pieces = _parse_anchor(block)
+                pieces = _parse_anchor(body[open_brace : close + 1])
                 if pieces:
                     anchors.append((anchor_match.start(), close, pieces))
+
+            def _score(candidate: int, pieces: list[tuple[int, str]]) -> int:
+                """كم قطعةً من الاقتباس تطابق آياتها في هذه السورة."""
+                hits = 0
+                for ayah_number, piece in pieces:
+                    reference = ayah_skeleton.get((candidate, ayah_number))
+                    piece_key = _skeleton(FOOTNOTE_REF.sub("", piece))
+                    if reference and piece_key and (
+                        piece_key in reference or reference in piece_key
+                    ):
+                        hits += 1
+                return hits
 
             for a_index, (start, close, pieces) in enumerate(anchors):
                 seg_end = (
@@ -208,20 +302,23 @@ def main() -> int:
                 )
                 ayah_start = pieces[0][0]
                 ayah_end = pieces[-1][0]
+                # قسمٌ يجمع سورتين: **حارس المطابقة** هو الذي يفصلهما —
+                # تُجرَّب السورتان ويُؤخذ ما طابق اقتباسه، فلا يُنسب مقطعٌ
+                # بالترتيب وحده حيث يمكن إثباته
+                number = head_number
+                if combined:
+                    scores = {
+                        candidate: _score(candidate, pieces)
+                        for candidate in (head_number, head_number + 1)
+                        if candidate <= 114
+                    }
+                    number = max(scores, key=lambda c: scores[c])
                 if not (
                     1 <= ayah_start <= ayah_end <= ayah_counts.get(number, 0)
                 ):
                     continue
                 # حارس الربط: كل قطعة تقابل بآيتها من الحزمة المبصومة
-                matched = 0
-                for ayah_number, piece in pieces:
-                    reference = ayah_skeleton.get((number, ayah_number))
-                    piece_key = _skeleton(FOOTNOTE_REF.sub("", piece))
-                    if reference and piece_key and (
-                        piece_key in reference or reference in piece_key
-                    ):
-                        matched += 1
-                anchored = matched == len(pieces)
+                anchored = _score(number, pieces) == len(pieces)
 
                 commentary = _clean(body[close + 1 : seg_end])
                 if len(commentary) < 40:
@@ -265,6 +362,7 @@ def main() -> int:
             "source_url": work["source_url"],
             "sha256": hashlib.sha256(raw_bytes).hexdigest(),
             "apparatus": work["apparatus"],
+            "notes": work["notes"],
             "passages": len(parsed),
             "anchored": anchored_count,
             "surahs_covered": len({p["surah"] for p in parsed}),

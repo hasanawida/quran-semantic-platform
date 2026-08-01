@@ -48,11 +48,19 @@ DATA = REPO / "apps" / "api" / "data"
 OUT = REPO / "apps" / "web" / "public" / "data" / "v1"
 
 # سقف الحجم الخام لشجرة البيانات. تجاوزه خطأ بناء لا مفاجأة إنتاج.
-# رُفع من 30MB إلى 64MB مع دخول متون المعاجم الأربعة (قرار المالك
-# 2026-08-01): المقيس بعدها ≈ 46.7MB، والهامش يكشف الانفجار غير المقصود
-# ويبقى دون سقف out/ في سير النشر (100MB) بمسافة أمان. والقارئ لا يجلب
-# الشجرة كلها: مواد المعاجم شظايا بالجذر تُجلب مادةً مادة.
-RAW_BUDGET = 64 * 1024 * 1024
+#
+# 30MB ← 64MB مع متون المعاجم الأربعة، ثم ← 96MB مع تفسيرَي البغوي وابن
+# كثير (قرار المالك 2026-08-01). المقيس بعدهما ≈ 65MB: المعاجم 22.8
+# والتفسير 20.6 والصرف 10.6 والباقي متفرق.
+#
+# **والقارئ لا يجلب الشجرة كلها أبدًا:** كل شيء مشظّى — المعاجم بالجذر،
+# والتفسير بالكتاب والسورة، والصرف بالسورة. الميزانية حدُّ مستودعٍ ونشرٍ
+# لا حدُّ تحميلٍ على القارئ.
+#
+# **والطبري لا يدخل هنا بلا قرار مستقل:** حجمه وحده يقارب ضعف ما مضى،
+# ويلزمه إمّا رفعُ سقف النشر (out/ محدود بـ100MB في ci) وإمّا استضافةُ
+# بياناته خارج المستودع.
+RAW_BUDGET = 96 * 1024 * 1024
 
 files: dict[str, str] = {}
 
@@ -242,14 +250,16 @@ def main() -> None:
         with gzip.open(tafsir_path, "rt", encoding="utf-8") as handle:
             tafsir = json.load(handle)
         tafsir_meta = tafsir["meta"]
-        by_surah: dict[int, list[dict]] = {}
+        # شظيةٌ لكل (كتاب، سورة): القارئ لا يجلب إلا الكتاب الذي فتحه —
+        # ملفٌ واحد للسورة كان يحمّله كلَّ التفاسير ولو لم يفتح إلا واحدًا
         for work_key, passages in tafsir["passages"].items():
+            by_surah: dict[int, list[dict]] = {}
             for passage in passages:
                 assert 1 <= passage["surah"] <= 114, passage["surah"]
                 by_surah.setdefault(passage["surah"], []).append(passage)
-        for surah_number, payload in by_surah.items():
-            payload.sort(key=lambda p: (p["ayah_start"], p["work"]))
-            write(f"tafsir/{surah_number}.json", payload)
+            for surah_number, payload in by_surah.items():
+                payload.sort(key=lambda p: p["ayah_start"])
+                write(f"tafsir/{work_key}/{surah_number}.json", payload)
         write("tafsir.json", tafsir_meta)
 
     write(

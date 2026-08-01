@@ -42,6 +42,7 @@ def test_every_work_carries_full_attribution(bundle):
             "apparatus",
         ):
             assert meta.get(field), f"{key}: حقل الإسناد {field} فارغ"
+        assert "notes" in meta, f"{key}: حقل التحفظات غائب"
         assert re.fullmatch(r"[0-9a-f]{64}", meta["sha256"]), key
         # مؤلفون متقدمون قرونًا — مناط كون المتن ملكًا عامًّا (§٢٠)
         assert int(meta["author_died_hijri"]) <= 774, key
@@ -64,6 +65,15 @@ def test_passages_reference_real_ayahs(bundle):
                 <= passage["ayah_end"]
                 <= counts[surah]
             ), f"{work}: {surah}:{passage['ayah_start']}-{passage['ayah_end']}"
+
+
+def test_surah_coverage_is_complete(bundle):
+    """كل كتابٍ يغطي المصحف كلَّه — سورةٌ غائبة تعني رأسًا لم يُفكّ،
+    وذاك خطأُ تقطيعٍ يُصلح لا نقصٌ في المؤلف."""
+    for work, passages in bundle["passages"].items():
+        covered = {p["surah"] for p in passages}
+        missing = [n for n in range(1, 115) if n not in covered]
+        assert not missing, f"{work}: سور بلا مقاطع {missing}"
 
 
 def test_anchoring_rate_is_high_and_honest(bundle):
