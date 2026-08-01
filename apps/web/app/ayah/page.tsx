@@ -430,6 +430,42 @@ export default function AyahAnalysisPage() {
                       </details>
                     );
                   })}
+
+                  {/* للاستزادة: كتبٌ نافعة لا يُنقل متنها — يُدلّ عليها
+                      بإسنادها ليقرأها من أرادها عند صاحبها */}
+                  {tafsirMeta.further_reading?.length > 0 && (
+                    <details className="lex-details">
+                      <summary>
+                        <span className="lex-book-title">للاستزادة</span>
+                        <span className="lex-book-info">
+                          {tafsirMeta.further_reading.length} تفاسير معاصرة —
+                          إحالة بلا نقل
+                        </span>
+                      </summary>
+                      <ul className="lex-refs">
+                        {tafsirMeta.further_reading.map((book) => (
+                          <li key={book.work}>
+                            <a
+                              href={book.url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                            >
+                              {book.work}
+                            </a>
+                            <span className="ref-author">
+                              {book.author} (ت{book.died})
+                            </span>
+                            <span className="lex-licence">{book.edition}</span>
+                            <span className="muted">{book.why}</span>
+                            <span className="lex-state">{book.status}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="sihah-provenance">
+                        {tafsirMeta.further_reading_note}
+                      </p>
+                    </details>
+                  )}
                 </section>
               );
             })()}

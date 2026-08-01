@@ -841,10 +841,23 @@ export type TafsirWork = {
   anchored: number;
 };
 
+/** كتاب يحال اليه ولا ينقل متنه — حق مؤلفه المعاصر قائم */
+export type TafsirReference = {
+  work: string;
+  author: string;
+  died: string;
+  edition: string;
+  why: string;
+  status: string;
+  url: string;
+};
+
 export type TafsirMeta = {
   decision: string;
   review_status: string;
   works: Record<string, TafsirWork>;
+  further_reading: TafsirReference[];
+  further_reading_note: string;
 };
 
 /** مقطع تفسير: مداه من ارقام الايات في اقتباس المطبوع نفسه، وanchored
